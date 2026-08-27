@@ -175,6 +175,22 @@ button:disabled,
   }
 }
 
+.orbis-spinner {
+  display: block;
+  height: 0.9rem;
+  width: 0.9rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 9999px;
+  animation: orbis-spin 0.7s linear infinite;
+}
+
+@keyframes orbis-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .orbis-hero {
   background:
     radial-gradient(120% 80% at 10% 0%, rgba(255, 214, 170, 0.38), transparent 55%),

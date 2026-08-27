@@ -181,8 +181,13 @@ export function VoiceDock(props: {
             </p>
           )}
           {props.checking && !editing ? (
-            <p className="text-sm text-stone-500">
-              Checking spelling, grammar, and tense…
+            <p className="flex items-center gap-2 text-sm text-stone-600 dark:text-zinc-400">
+              <span className="orbis-thinking-dots" aria-hidden>
+                <span />
+                <span />
+                <span />
+              </span>
+              Looking at spelling, grammar, and tense…
             </p>
           ) : null}
           {!editing && props.check && props.check.issues.length > 0 ? (

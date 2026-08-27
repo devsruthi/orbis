@@ -24,7 +24,7 @@ import {
   reviewCounts,
   upcomingReviews,
 } from "./reviews";
-import { scenarioAttemptStatus, scenarioLevel, activeSessionIdForScenario } from "./scenarios";
+import { scenarioAttemptStatus, scenarioLevel, activeSessionIdForScenario, resumableActiveSessions, sessionLastActivity } from "./scenarios";
 import { averageScore, progressTrend } from "./stats";
 import { learningStreak } from "./streak";
 
@@ -105,6 +105,9 @@ export async function getLearnerDashboard(
   const history = completed.slice(0, HISTORY_LIMIT).map((session) =>
     toDashboardSession(session),
   );
+  const inProgressSessions = resumableActiveSessions(sessions).map((session) =>
+    toDashboardSession(session),
+  );
   const counts = reviewCounts(reviewItems, now);
   const paths = enrolled.map((path) =>
     toDashboardPath(path, sessions, completed, now),
@@ -150,6 +153,7 @@ export async function getLearnerDashboard(
     ),
     strengths: learner?.strengths.slice(0, 8) ?? [],
     recentSessions: history.slice(0, RECENT_LIMIT),
+    inProgressSessions,
     history,
     scoreHistory,
     recommendations,
@@ -334,6 +338,7 @@ function recommendationForPath(
 }
 
 function toDashboardSession(session: Session) {
+  const updatedAt = sessionLastActivity(session);
   return {
     id: session.id,
     scenarioId: session.scenarioId,
@@ -344,6 +349,7 @@ function toDashboardSession(session: Session) {
     level: session.level,
     status: session.status,
     createdAt: session.createdAt,
+    updatedAt,
     ...(session.completedAt ? { completedAt: session.completedAt } : {}),
     ...(session.feedback?.overallScore !== undefined
       ? { overallScore: session.feedback.overallScore }

@@ -43,6 +43,27 @@ export function MessageCheckIssues({
   );
 }
 
+export function MessageCheckingStatus({ original }: { original: string }) {
+  return (
+    <div
+      className="flex flex-col gap-3 rounded-2xl bg-[#f4efe6] p-4 dark:bg-zinc-800/70"
+      aria-live="polite"
+      aria-label="Checking your message"
+    >
+      <p className="text-sm font-medium text-stone-500">Checking your message</p>
+      <p className="font-serif text-lg leading-relaxed">“{original}”</p>
+      <p className="flex items-center gap-2 text-sm text-stone-600 dark:text-zinc-400">
+        <span className="orbis-thinking-dots" aria-hidden>
+          <span />
+          <span />
+          <span />
+        </span>
+        Looking at spelling, grammar, and tense…
+      </p>
+    </div>
+  );
+}
+
 export function MessageCheckCard(props: {
   original: string;
   result: PublicMessageCheck;

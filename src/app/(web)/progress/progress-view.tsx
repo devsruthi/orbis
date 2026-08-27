@@ -13,7 +13,7 @@ import {
 import { ErrorState, EmptyState, PageSkeleton } from "../ui/states";
 import { ScoreBar } from "../ui/score-bar";
 import { Sparkline } from "../ui/sparkline";
-import { CARD, PageHeader } from "../ui/page-header";
+import { CARD, PageHeader, PRIMARY_BUTTON } from "../ui/page-header";
 
 export function ProgressView() {
   const { data, loading, error, reload } = useLearnerDashboard();
@@ -49,6 +49,41 @@ export function ProgressView() {
             : " · No streak yet"
         }`}
       />
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
+          In progress
+        </h2>
+        {data.inProgressSessions.length === 0 ? (
+          <EmptyState
+            title="No scenes in progress."
+            body="Start a mission and it will wait here until you finish."
+            action={{ href: "/explore", label: "Explore scenarios" }}
+          />
+        ) : (
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {data.inProgressSessions.map((session) => (
+              <li key={session.id} className={`min-w-0 ${CARD}`}>
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-orbis-gold-deep">
+                  In progress
+                </p>
+                <p className="mt-1 font-medium">{session.scenarioTitle}</p>
+                <p className="text-sm text-stone-500">
+                  <span aria-hidden>{languageFlag(session.language)} </span>
+                  {session.language.toUpperCase()} {session.level}
+                  {` · ${formatRelativeTime(session.updatedAt ?? session.createdAt)}`}
+                </p>
+                <Link
+                  href={playPath(session.id)}
+                  className={`${PRIMARY_BUTTON} mt-3 w-full sm:w-auto`}
+                >
+                  Continue
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">

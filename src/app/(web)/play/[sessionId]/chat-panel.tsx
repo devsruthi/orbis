@@ -28,7 +28,7 @@ import { isCefrLevel } from "@/lib/shared/cefr";
 import { GlobeIcon, HomeIcon, SendIcon, SpeakerIcon } from "../../ui/icons";
 import { LevelBadge, PRIMARY_BUTTON, SECONDARY_BUTTON } from "../../ui/page-header";
 import { EvaluationPanel } from "./evaluation-panel";
-import { MessageCheckCard } from "./message-check-card";
+import { MessageCheckCard, MessageCheckingStatus } from "./message-check-card";
 import { ComposerMicButton, VoiceDock } from "./voice-panel";
 
 const POLL_MS = 2500;
@@ -290,11 +290,13 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
     try {
       const result = await orbisApi.checkMessage(session.id, text);
       if (result.ok || result.issues.length === 0) {
+        setChecking(false);
         await deliverTurn(text);
         return;
       }
       setMessageCheck(result);
     } catch {
+      setChecking(false);
       await deliverTurn(text);
     } finally {
       setChecking(false);
@@ -514,7 +516,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
               onPlay={voice.speakText}
             />
           ))}
-          {pendingUserText ? (
+          {pendingUserText && !checking ? (
             <>
               <ChatTurnRow
                 role="user"
@@ -641,6 +643,12 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
               checking={voiceChecking}
             />
 
+            {checking ? (
+              <div className="mt-3">
+                <MessageCheckingStatus original={message.trim()} />
+              </div>
+            ) : null}
+
             {messageCheck && messageCheck.issues.length > 0 ? (
               <div className="mt-3">
                 <MessageCheckCard
@@ -660,7 +668,9 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
                   "flex min-w-0 flex-1 items-center rounded-full border bg-white pl-4 pr-1.5 shadow-sm transition dark:bg-zinc-950",
                   listening
                     ? "border-emerald-400 ring-2 ring-emerald-400/20"
-                    : "border-stone-200 focus-within:border-orbis-gold focus-within:ring-2 focus-within:ring-orbis-gold/25 dark:border-zinc-700",
+                    : checking
+                      ? "border-orbis-gold ring-2 ring-orbis-gold/25"
+                      : "border-stone-200 focus-within:border-orbis-gold focus-within:ring-2 focus-within:ring-orbis-gold/25 dark:border-zinc-700",
                 ].join(" ")}
               >
                 <label htmlFor="orbis-message" className="sr-only">
@@ -684,7 +694,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
                   enterKeyHint="send"
                   maxLength={4000}
                   placeholder={`Type your message in ${languageName}…`}
-                  className="h-12 min-w-0 flex-1 appearance-none border-0 bg-transparent text-sm outline-none ring-0 placeholder:text-stone-400 focus:outline-none focus:ring-0 disabled:opacity-60"
+                  className="h-12 min-w-0 flex-1 appearance-none border-0 bg-transparent text-sm outline-none ring-0 placeholder:text-stone-400 focus:outline-none focus:ring-0"
                   disabled={composerBusy || listening}
                   autoComplete="off"
                 />
@@ -693,7 +703,8 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
                   disabled={composerBusy || listening || !message.trim()}
                   className={[
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition",
-                    message.trim() && !composerBusy && !listening
+                    checking ||
+                    (message.trim() && !composerBusy && !listening)
                       ? "bg-orbis-gold text-white shadow-sm hover:bg-orbis-gold-deep"
                       : "text-stone-400 hover:bg-stone-100 disabled:hover:bg-transparent dark:hover:bg-zinc-800",
                   ].join(" ")}
@@ -701,7 +712,11 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
                     checking ? "Checking message" : sending ? "Sending" : "Send"
                   }
                 >
-                  <SendIcon className="h-4 w-4" />
+                  {checking ? (
+                    <span className="orbis-spinner" aria-hidden />
+                  ) : (
+                    <SendIcon className="h-4 w-4" />
+                  )}
                 </button>
               </div>
               {voice.capabilities.speechToText ? (

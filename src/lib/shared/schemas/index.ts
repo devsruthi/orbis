@@ -731,6 +731,7 @@ export const DashboardSessionSchema = z.object({
   overallScore: ScoreSchema.optional(),
   completedAt: z.string().optional(),
   createdAt: z.string().min(1),
+  updatedAt: z.string().min(1).optional(),
 });
 
 export const ScoreHistoryPointSchema = z.object({
@@ -807,6 +808,7 @@ export const DashboardResponseSchema = z.object({
   weaknesses: z.array(DashboardWeaknessSchema),
   strengths: z.array(z.string()),
   recentSessions: z.array(DashboardSessionSchema),
+  inProgressSessions: z.array(DashboardSessionSchema),
   history: z.array(DashboardSessionSchema),
   scoreHistory: z.array(ScoreHistoryPointSchema),
   recommendations: z.array(DashboardRecommendationSchema),

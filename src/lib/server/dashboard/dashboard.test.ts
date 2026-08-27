@@ -14,7 +14,7 @@ import { getLearnerDashboard } from "./dashboard";
 import { learningStreak } from "./streak";
 import { averageScore, progressTrend } from "./stats";
 import { orderedWeaknesses, reviewCounts } from "./reviews";
-import { scenarioAttemptStatus, activeSessionIdForScenario } from "./scenarios";
+import { scenarioAttemptStatus, activeSessionIdForScenario, resumableActiveSessions } from "./scenarios";
 
 const NOW = "2026-03-10T12:00:00.000Z";
 
@@ -54,6 +54,7 @@ describe("dashboard aggregation", () => {
     expect(dashboard.summary.streakDays).toBe(0);
     expect(dashboard.summary.trend).toBe("insufficient");
     expect(dashboard.history).toEqual([]);
+    expect(dashboard.inProgressSessions).toEqual([]);
     expect(dashboard.weaknesses).toEqual([]);
     expect(dashboard.reviews.counts).toEqual({
       dueToday: 0,
@@ -290,6 +291,13 @@ describe("dashboard aggregation", () => {
     expect(bakery?.activeSessionId).not.toBe(older.id);
     expect(restaurant?.attemptStatus).toBe("recently_completed");
     expect(restaurant?.activeSessionId).toBeUndefined();
+    expect(dashboard.inProgressSessions).toEqual([
+      expect.objectContaining({
+        id: latest.id,
+        scenarioId: "bakery",
+        status: "active",
+      }),
+    ]);
   });
 });
 
@@ -457,6 +465,11 @@ describe("dashboard calculations", () => {
     expect(
       activeSessionIdForScenario([newerEmpty, olderWithHistory], "bakery"),
     ).toBe(olderWithHistory.id);
+    expect(
+      resumableActiveSessions([newerEmpty, olderWithHistory]).map(
+        (session) => session.id,
+      ),
+    ).toEqual([olderWithHistory.id]);
   });
 });
 

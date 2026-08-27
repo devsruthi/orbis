@@ -63,6 +63,34 @@ function lastActivity(session: Session): string {
   return session.turns.at(-1)?.createdAt ?? session.createdAt;
 }
 
+export function sessionLastActivity(session: Session): string {
+  return lastActivity(session);
+}
+
+export function resumableActiveSessions(sessions: Session[]): Session[] {
+  const keys = new Map<string, { worldId: string; scenarioId: Session["scenarioId"] }>();
+  for (const session of sessions) {
+    if (session.status !== "active") {
+      continue;
+    }
+    keys.set(`${session.worldId}:${session.scenarioId}`, {
+      worldId: session.worldId,
+      scenarioId: session.scenarioId,
+    });
+  }
+  return [...keys.values()]
+    .map((pair) => {
+      const id = activeSessionIdForScenario(
+        sessions,
+        pair.scenarioId,
+        pair.worldId,
+      );
+      return sessions.find((session) => session.id === id);
+    })
+    .filter((session): session is Session => Boolean(session))
+    .sort((a, b) => lastActivity(b).localeCompare(lastActivity(a)));
+}
+
 export function scenarioLevel(scenario: Scenario): Scenario["supportedLevels"][number] {
   return scenario.supportedLevels.includes("A1")
     ? "A1"
