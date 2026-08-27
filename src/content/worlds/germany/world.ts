@@ -11,6 +11,7 @@ export const germanyWorld: World = {
   defaultLanguage: "de",
   supportedLanguages: ["de"],
   categoryIds: [
+    "everyday",
     "housing",
     "city_registration",
     "residence",
@@ -18,7 +19,6 @@ export const germanyWorld: World = {
     "work",
     "healthcare",
     "transport",
-    "everyday",
   ],
   locationIds: germanyLocations.map((location) => location.id),
   culturalNotes: [

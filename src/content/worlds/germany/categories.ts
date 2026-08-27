@@ -2,6 +2,12 @@ import type { Category } from "@/lib/shared/models";
 
 export const germanyCategories: Category[] = [
   {
+    id: "everyday",
+    worldId: "germany",
+    title: { en: "Everyday life" },
+    disclaimer: "none",
+  },
+  {
     id: "housing",
     worldId: "germany",
     title: { en: "Housing" },
@@ -41,12 +47,6 @@ export const germanyCategories: Category[] = [
     id: "transport",
     worldId: "germany",
     title: { en: "Transport" },
-    disclaimer: "none",
-  },
-  {
-    id: "everyday",
-    worldId: "germany",
-    title: { en: "Everyday life" },
     disclaimer: "none",
   },
 ];

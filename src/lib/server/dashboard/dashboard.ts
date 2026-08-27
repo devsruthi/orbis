@@ -4,6 +4,7 @@ import {
   listCategories,
   listScenarios,
 } from "@/content";
+import { sortMissionsByEventOrder } from "@/content/mission-sequence";
 import { DEFAULT_CEFR_LEVEL } from "@/lib/shared/learning-options";
 import { recommendNextPractice } from "@/lib/server/adaptive/selector";
 import { getPersistence, type Persistence } from "@/lib/server/persistence";
@@ -249,35 +250,37 @@ function categoriesForWorld(
   return listCategories(worldId).map((category) => ({
     id: category.id,
     title: category.title.en,
-    scenarios: listScenarios(worldId)
-      .filter((scenario) => scenario.categoryId === category.id)
-      .map((scenario) => {
-        const progress = scenarioAttemptStatus(
-          sessions,
-          scenario.id,
-          now,
-          worldId,
-        );
-        return {
-          id: scenario.id,
-          worldId: scenario.worldId,
-          categoryId: scenario.categoryId,
-          categoryTitle: category.title.en,
-          title: scenario.title.en,
-          status: scenario.status,
-          level: scenario.supportedLevels.includes(level)
-            ? level
-            : scenarioLevel(scenario),
-          language: scenario.supportedLanguages[0] ?? language,
-          supportedConcepts: scenario.supportedConcepts,
-          attemptStatus: progress.status,
-          completedCount: progress.completedCount,
-          ...(scenario.summary?.en ? { summary: scenario.summary.en } : {}),
-          ...(scenario.estimatedMinutes
-            ? { estimatedMinutes: scenario.estimatedMinutes }
-            : {}),
-        };
-      }),
+    scenarios: sortMissionsByEventOrder(
+      listScenarios(worldId).filter(
+        (scenario) => scenario.categoryId === category.id,
+      ),
+    ).map((scenario) => {
+      const progress = scenarioAttemptStatus(
+        sessions,
+        scenario.id,
+        now,
+        worldId,
+      );
+      return {
+        id: scenario.id,
+        worldId: scenario.worldId,
+        categoryId: scenario.categoryId,
+        categoryTitle: category.title.en,
+        title: scenario.title.en,
+        status: scenario.status,
+        level: scenario.supportedLevels.includes(level)
+          ? level
+          : scenarioLevel(scenario),
+        language: scenario.supportedLanguages[0] ?? language,
+        supportedConcepts: scenario.supportedConcepts,
+        attemptStatus: progress.status,
+        completedCount: progress.completedCount,
+        ...(scenario.summary?.en ? { summary: scenario.summary.en } : {}),
+        ...(scenario.estimatedMinutes
+          ? { estimatedMinutes: scenario.estimatedMinutes }
+          : {}),
+      };
+    }),
   }));
 }
 

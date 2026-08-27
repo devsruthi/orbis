@@ -26,6 +26,7 @@ describe("content loading", () => {
       expect.arrayContaining(["buergeramt", "apartment", "restaurant"]),
     );
     expect(germany?.categoryIds).toEqual([
+      "everyday",
       "housing",
       "city_registration",
       "residence",
@@ -33,7 +34,6 @@ describe("content loading", () => {
       "work",
       "healthcare",
       "transport",
-      "everyday",
     ]);
   });
 

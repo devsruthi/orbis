@@ -77,6 +77,29 @@ describe("dashboard aggregation", () => {
         (scenario) => scenario.status === "enabled",
       ),
     ).toHaveLength(32);
+    expect(
+      dashboard.paths[0]?.categories.find((category) => category.id === "housing")
+        ?.scenarios.map((scenario) => scenario.id),
+    ).toEqual([
+      "find_apartment",
+      "contact_landlord",
+      "apartment_viewing",
+      "move_in",
+    ]);
+    expect(
+      dashboard.paths[0]?.categories.find(
+        (category) => category.id === "city_registration",
+      )?.scenarios.map((scenario) => scenario.id),
+    ).toEqual([
+      "waiting_number",
+      "bring_documents",
+      "city_registration",
+      "pickup_certificate",
+    ]);
+    expect(
+      dashboard.paths[0]?.categories.find((category) => category.id === "everyday")
+        ?.scenarios.map((scenario) => scenario.id),
+    ).toEqual(["bakery", "supermarket", "cafe", "restaurant"]);
   });
 
   it("aggregates scores, recent sessions, weaknesses, and recommendation", async () => {

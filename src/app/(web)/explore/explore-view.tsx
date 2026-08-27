@@ -8,7 +8,6 @@ import { playPath } from "@/lib/client/routes";
 import {
   attemptStatusLabel,
   categoryHeadline,
-  enrolledPathLabel,
   humanizeConcept,
   languageFlag,
 } from "@/lib/client/labels";
@@ -29,6 +28,7 @@ export function ExploreView() {
   const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
 
   if (loading) {
     return <PageSkeleton label="Unfolding the map…" />;
@@ -54,6 +54,13 @@ export function ExploreView() {
     );
   }
 
+  const activeLanguage =
+    selectedLanguage && data.paths.some((path) => path.language === selectedLanguage)
+      ? selectedLanguage
+      : data.learner.language;
+  const activePath =
+    data.paths.find((path) => path.language === activeLanguage) ?? data.paths[0];
+
   async function start(path: DashboardPath, scenario: DashboardScenario) {
     if (scenario.status !== "enabled") {
       return;
@@ -74,68 +81,125 @@ export function ExploreView() {
     }
   }
 
+  if (!activePath) {
+    return (
+      <ErrorState
+        message="No language path found."
+        onRetry={() => void reload()}
+      />
+    );
+  }
+
+  const readyCategories = activePath.categories
+    .map((category) => ({
+      ...category,
+      scenarios: category.scenarios.filter(
+        (scenario) => scenario.status === "enabled",
+      ),
+    }))
+    .filter((category) => category.scenarios.length > 0);
+  const laterCategories = activePath.categories
+    .map((category) => ({
+      ...category,
+      scenarios: category.scenarios.filter(
+        (scenario) => scenario.status !== "enabled",
+      ),
+    }))
+    .filter((category) => category.scenarios.length > 0);
+
   return (
     <div className="flex min-w-0 flex-col gap-10">
       <PageHeader
         kicker="Your world"
         title="Step into the city"
-        body={`Four live scenes in every part of ${enrolledPathLabel(data.paths) || "everyday life"}. Walk in and start speaking.`}
+        body={`Four live scenes in every part of ${activePath.languageName} ${activePath.level}. Walk in and start speaking.`}
       />
       {startError ? <p className="text-sm text-red-700">{startError}</p> : null}
 
-      {data.paths.map((path) => {
-        const readyCategories = path.categories
-          .map((category) => ({
-            ...category,
-            scenarios: category.scenarios.filter(
-              (scenario) => scenario.status === "enabled",
-            ),
-          }))
-          .filter((category) => category.scenarios.length > 0);
-        const laterCategories = path.categories
-          .map((category) => ({
-            ...category,
-            scenarios: category.scenarios.filter(
-              (scenario) => scenario.status !== "enabled",
-            ),
-          }))
-          .filter((category) => category.scenarios.length > 0);
+      <div className="flex min-w-0 flex-col gap-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-1">
+            <h2 className="font-serif text-4xl font-medium tracking-tight sm:text-5xl">
+              <span aria-hidden>{languageFlag(activePath.language)} </span>
+              {activePath.languageName}
+            </h2>
+            <p className="text-sm uppercase tracking-[0.18em] text-orbis-gold-deep">
+              {activePath.level} · {activePath.languageName} in the wild
+            </p>
+          </div>
+          {data.paths.length > 1 ? (
+            <LanguageSwitcher
+              paths={data.paths}
+              selected={activePath.language}
+              onSelect={setSelectedLanguage}
+            />
+          ) : null}
+        </div>
 
-        return (
-          <div key={path.language} className="flex min-w-0 flex-col gap-8">
-            <div className="flex flex-col gap-1">
-              <h2 className="font-serif text-4xl font-medium tracking-tight sm:text-5xl">
-                <span aria-hidden>{languageFlag(path.language)} </span>
-                {path.languageName}
-              </h2>
-              <p className="text-sm uppercase tracking-[0.18em] text-orbis-gold-deep">
-                {path.level} · {path.languageName} in the wild
-              </p>
-            </div>
+        {readyCategories.map((category) => (
+          <CategorySection
+            key={`${activePath.language}-${category.id}`}
+            category={category}
+            pendingId={pendingId}
+            onStart={(scenario) => start(activePath, scenario)}
+          />
+        ))}
 
-            {readyCategories.map((category) => (
+        {laterCategories.length > 0 ? (
+          <div className="flex flex-col gap-8 opacity-80">
+            <p className="font-serif text-2xl">Coming later</p>
+            {laterCategories.map((category) => (
               <CategorySection
-                key={`${path.language}-${category.id}`}
+                key={`${activePath.language}-later-${category.id}`}
                 category={category}
                 pendingId={pendingId}
-                onStart={(scenario) => start(path, scenario)}
+                onStart={(scenario) => start(activePath, scenario)}
               />
             ))}
-
-            {laterCategories.length > 0 ? (
-              <div className="flex flex-col gap-8 opacity-80">
-                <p className="font-serif text-2xl">Coming later</p>
-                {laterCategories.map((category) => (
-                  <CategorySection
-                    key={`${path.language}-later-${category.id}`}
-                    category={category}
-                    pendingId={pendingId}
-                    onStart={(scenario) => start(path, scenario)}
-                  />
-                ))}
-              </div>
-            ) : null}
           </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function LanguageSwitcher({
+  paths,
+  selected,
+  onSelect,
+}: {
+  paths: DashboardPath[];
+  selected: string;
+  onSelect: (language: string) => void;
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Language"
+      className="flex flex-wrap gap-2"
+    >
+      {paths.map((path) => {
+        const active = path.language === selected;
+        return (
+          <button
+            key={path.language}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onSelect(path.language)}
+            className={[
+              "inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition",
+              active
+                ? "bg-orbis-gold text-white"
+                : "border border-stone-300/90 bg-white text-stone-600 hover:border-orbis-gold/50 hover:text-foreground dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300",
+            ].join(" ")}
+          >
+            <span aria-hidden>{languageFlag(path.language)}</span>
+            {path.languageName}
+            <span className={active ? "text-white/80" : "text-stone-400"}>
+              {path.level}
+            </span>
+          </button>
         );
       })}
     </div>

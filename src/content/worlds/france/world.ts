@@ -10,7 +10,7 @@ export const franceWorld: World = {
   },
   defaultLanguage: "fr",
   supportedLanguages: ["fr"],
-  categoryIds: ["housing", "city_registration", "everyday"],
+  categoryIds: ["everyday", "housing", "city_registration"],
   locationIds: franceLocations.map((location) => location.id),
   culturalNotes: [
     "Landlords, clerks, and waiters typically use formal vous with someone they have just met.",
