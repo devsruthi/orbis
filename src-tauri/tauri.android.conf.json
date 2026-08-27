@@ -1,0 +1,13 @@
+{
+  "build": {
+    "devUrl": "http://10.0.2.2:3000"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Orbis",
+        "fullscreen": true
+      }
+    ]
+  }
+}
