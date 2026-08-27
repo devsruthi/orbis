@@ -334,9 +334,14 @@ function CategorySection({
                     className={`${SECONDARY_BUTTON} w-full`}
                   >
                     {pendingId === `${scenario.worldId}:${scenario.id}` &&
-                    pendingKind === "restart"
-                      ? "Starting over…"
-                      : "Start over"}
+                    pendingKind === "restart" ? (
+                      <>
+                        <span className="orbis-spinner mr-2" aria-hidden />
+                        Starting over…
+                      </>
+                    ) : (
+                      "Start over"
+                    )}
                   </button>
                 ) : null}
               </div>

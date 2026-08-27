@@ -478,7 +478,14 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
               disabled={composerBusy}
               className={SECONDARY_BUTTON}
             >
-              {restarting ? "Starting over…" : "Start over"}
+              {restarting ? (
+                <>
+                  <span className="orbis-spinner mr-2" aria-hidden />
+                  Starting over…
+                </>
+              ) : (
+                "Start over"
+              )}
             </button>
           ) : null}
         </div>
@@ -535,7 +542,22 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
         </div>
       ) : null}
 
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pb-3">
+      <div className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pb-3">
+        {restarting ? (
+          <div
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#f6f3ec]/80 dark:bg-[#16130f]/80"
+            role="status"
+            aria-live="polite"
+          >
+            <span
+              className="orbis-spinner text-orbis-gold"
+              style={{ height: "1.75rem", width: "1.75rem", borderWidth: "3px" }}
+              aria-hidden
+            />
+            <p className="font-serif text-xl">Starting over…</p>
+            <p className="text-sm text-stone-500">Opening a fresh scene.</p>
+          </div>
+        ) : null}
         <section className="flex flex-col gap-2">
           {session.turns.map((turn) => (
             <ChatTurnRow
