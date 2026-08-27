@@ -271,7 +271,7 @@ describe("session service", () => {
     expect(await persistence.getEvaluationsForSession(created.id)).toEqual([]);
   });
 
-  it("rejects unknown worlds, coming-soon scenarios, and unsupported levels", async () => {
+  it("rejects unknown worlds, unknown scenarios, and unsupported levels", async () => {
     const { sessions } = await service();
     const learnerId = createId();
 
@@ -286,10 +286,10 @@ describe("session service", () => {
     await expect(
       sessions.createSession({
         ...input,
-        scenarioId: "job_interview",
+        scenarioId: "unknown_scene",
         learnerId,
       }),
-    ).rejects.toMatchObject({ status: 400 });
+    ).rejects.toMatchObject({ status: 404 });
 
     await expect(
       sessions.createSession({

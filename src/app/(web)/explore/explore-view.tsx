@@ -7,26 +7,19 @@ import { startErrorMessage, startScenario } from "@/lib/client/start-session";
 import { playPath } from "@/lib/client/routes";
 import {
   attemptStatusLabel,
-  categoryMark,
+  categoryHeadline,
   enrolledPathLabel,
   humanizeConcept,
   languageFlag,
 } from "@/lib/client/labels";
 import { ErrorState, PageSkeleton } from "../ui/states";
 import { SetupFlow } from "../ui/setup-flow";
-import { PageHeader, PRIMARY_BUTTON, SectionLabel } from "../ui/page-header";
+import { PageHeader, PRIMARY_BUTTON } from "../ui/page-header";
+import {
+  missionCoverFallback,
+  missionCoverSrc,
+} from "@/lib/client/mission-images";
 import type { DashboardResponse } from "@/lib/shared/models";
-
-const CATEGORY_TONE: Record<string, string> = {
-  housing: "from-amber-100/90 to-orange-50/40",
-  city_registration: "from-sky-100/90 to-slate-50/40",
-  residence: "from-violet-100/80 to-stone-50/40",
-  university: "from-indigo-100/80 to-stone-50/40",
-  work: "from-emerald-100/80 to-stone-50/40",
-  healthcare: "from-rose-100/80 to-stone-50/40",
-  transport: "from-cyan-100/80 to-stone-50/40",
-  everyday: "from-lime-100/80 to-stone-50/40",
-};
 
 type DashboardPath = DashboardResponse["paths"][number];
 type DashboardScenario = DashboardPath["categories"][number]["scenarios"][number];
@@ -84,8 +77,9 @@ export function ExploreView() {
   return (
     <div className="flex min-w-0 flex-col gap-10">
       <PageHeader
-        title="Missions"
-        body={`Step into everyday life in ${enrolledPathLabel(data.paths) || "your languages"}. Ready scenes can start now.`}
+        kicker="Your world"
+        title="Step into the city"
+        body={`Four live scenes in every part of ${enrolledPathLabel(data.paths) || "everyday life"}. Walk in and start speaking.`}
       />
       {startError ? <p className="text-sm text-red-700">{startError}</p> : null}
 
@@ -109,14 +103,14 @@ export function ExploreView() {
 
         return (
           <div key={path.language} className="flex min-w-0 flex-col gap-8">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="font-serif text-2xl font-medium tracking-tight">
+            <div className="flex flex-col gap-1">
+              <h2 className="font-serif text-4xl font-medium tracking-tight sm:text-5xl">
                 <span aria-hidden>{languageFlag(path.language)} </span>
                 {path.languageName}
-                <span className="ml-2 text-base font-sans font-normal text-stone-500">
-                  {path.level}
-                </span>
               </h2>
+              <p className="text-sm uppercase tracking-[0.18em] text-orbis-gold-deep">
+                {path.level} · {path.languageName} in the wild
+              </p>
             </div>
 
             {readyCategories.map((category) => (
@@ -130,7 +124,7 @@ export function ExploreView() {
 
             {laterCategories.length > 0 ? (
               <div className="flex flex-col gap-8 opacity-80">
-                <SectionLabel>Coming later</SectionLabel>
+                <p className="font-serif text-2xl">Coming later</p>
                 {laterCategories.map((category) => (
                   <CategorySection
                     key={`${path.language}-later-${category.id}`}
@@ -157,21 +151,38 @@ function CategorySection({
   pendingId: string | null;
   onStart: (scenario: DashboardScenario) => void;
 }) {
+  const headline = categoryHeadline(category.id);
   return (
     <section className="flex min-w-0 flex-col gap-4">
-      <SectionLabel>{categoryMark(category.id)}</SectionLabel>
+      <div className="flex flex-col gap-1">
+        <h3 className="font-serif text-3xl font-medium tracking-tight">
+          {headline.title}
+        </h3>
+        <p className="max-w-lg text-sm leading-relaxed text-stone-500">
+          {headline.blurb}
+        </p>
+      </div>
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {category.scenarios.map((scenario) => (
           <li
             key={`${scenario.worldId}-${scenario.id}`}
             className="orbis-card flex min-w-0 flex-col overflow-hidden p-0"
           >
-            <div
-              className={[
-                "h-24 bg-gradient-to-br",
-                CATEGORY_TONE[category.id] ?? "from-stone-100 to-white",
-              ].join(" ")}
-            />
+            <div className="relative h-44 overflow-hidden bg-stone-200 dark:bg-zinc-900">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={missionCoverSrc(scenario.id, category.id)}
+                alt=""
+                className="h-full w-full object-cover"
+                onError={(event) => {
+                  if (event.currentTarget.dataset.fallback === "1") {
+                    return;
+                  }
+                  event.currentTarget.dataset.fallback = "1";
+                  event.currentTarget.src = missionCoverFallback(scenario.id);
+                }}
+              />
+            </div>
             <div className="flex min-w-0 flex-1 flex-col p-5">
             <p className="font-serif text-xl">{scenario.title}</p>
             <p className="text-sm text-stone-500">

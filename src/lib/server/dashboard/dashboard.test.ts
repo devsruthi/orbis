@@ -76,7 +76,7 @@ describe("dashboard aggregation", () => {
       dashboard.categories.flatMap((category) => category.scenarios).filter(
         (scenario) => scenario.status === "enabled",
       ),
-    ).toHaveLength(3);
+    ).toHaveLength(32);
   });
 
   it("aggregates scores, recent sessions, weaknesses, and recommendation", async () => {

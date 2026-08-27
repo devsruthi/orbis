@@ -10,17 +10,53 @@ export function humanizeConcept(concept: string): string {
 }
 
 export function categoryMark(categoryId: string): string {
-  const marks: Record<string, string> = {
-    housing: "Housing",
-    city_registration: "City office",
-    residence: "Residence",
-    university: "University",
-    work: "Work",
-    healthcare: "Health",
-    transport: "Transport",
-    everyday: "Everyday",
+  return categoryHeadline(categoryId).title;
+}
+
+export function categoryHeadline(categoryId: string): {
+  title: string;
+  blurb: string;
+} {
+  const headlines: Record<string, { title: string; blurb: string }> = {
+    housing: {
+      title: "Housing",
+      blurb: "Find a place, meet the landlord, and collect the keys.",
+    },
+    city_registration: {
+      title: "City office",
+      blurb: "Papers, numbers, and the counter — get through the visit.",
+    },
+    residence: {
+      title: "Residence",
+      blurb: "Practice the language of permits and appointments.",
+    },
+    university: {
+      title: "University",
+      blurb: "Enroll, ask, and find your way around campus.",
+    },
+    work: {
+      title: "Work",
+      blurb: "Interviews, first days, and talking to your team.",
+    },
+    healthcare: {
+      title: "Health",
+      blurb: "Book a visit, check in, and speak at the pharmacy.",
+    },
+    transport: {
+      title: "Transport",
+      blurb: "Tickets, delays, directions, and lost bags.",
+    },
+    everyday: {
+      title: "Everyday",
+      blurb: "The table, the shop, the café, the bakery.",
+    },
   };
-  return marks[categoryId] ?? categoryId;
+  return (
+    headlines[categoryId] ?? {
+      title: categoryId,
+      blurb: "Step into the scene and speak.",
+    }
+  );
 }
 
 export function greetingForHour(hour: number): string {

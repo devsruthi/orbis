@@ -1,8 +1,7 @@
 import type { ScenarioLocaleContent } from "@/lib/shared/models";
 
 /**
- * Engine-compatible definition for a future residence-permit mission.
- * Not playable: status is coming_soon and this file is not served by getScenarioContent.
+ * Engine-compatible definition for the residence-permit mission.
  */
 export const residencePermitDeA2: ScenarioLocaleContent = {
   worldId: "germany",

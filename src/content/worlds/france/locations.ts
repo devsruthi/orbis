@@ -23,4 +23,16 @@ export const franceLocations: Location[] = [
     name: { en: "Restaurant" },
     description: { en: "A casual restaurant during a meal." },
   },
+  {
+    id: "supermarket",
+    worldId: "france",
+    name: { en: "Supermarket" },
+    description: { en: "A grocery store aisle or checkout." },
+  },
+  {
+    id: "bakery",
+    worldId: "france",
+    name: { en: "Bakery" },
+    description: { en: "A boulangerie counter in the morning." },
+  },
 ];

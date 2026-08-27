@@ -52,24 +52,21 @@ describe("content loading", () => {
     );
   });
 
-  it("enables exactly three scenarios", () => {
+  it("enables four ready missions in every Germany category", () => {
     const scenarios = listScenarios("germany");
     const enabled = scenarios.filter((scenario) => scenario.status === "enabled");
-    expect(enabled.map((scenario) => scenario.id).sort()).toEqual([
-      "apartment_viewing",
-      "city_registration",
-      "restaurant",
-    ]);
-    expect(scenarios.some((scenario) => scenario.status === "coming_soon")).toBe(
-      true,
-    );
-    expect(getScenario("job_interview")?.status).toBe("coming_soon");
-    expect(getScenario("residence_permit_appointment")?.status).toBe(
-      "coming_soon",
-    );
+    expect(enabled).toHaveLength(32);
+    expect(getScenario("job_interview")?.status).toBe("enabled");
+    expect(getScenario("residence_permit_appointment")?.status).toBe("enabled");
     expect(getScenario("residence_permit_appointment")?.locationId).toBe(
       "auslaenderbehoerde",
     );
+    const germany = getWorld("germany");
+    for (const categoryId of germany?.categoryIds ?? []) {
+      expect(
+        enabled.filter((scenario) => scenario.categoryId === categoryId),
+      ).toHaveLength(4);
+    }
   });
 
   it("loads German CEFR content for enabled scenarios", () => {
@@ -93,7 +90,7 @@ describe("content loading", () => {
   it("does not load missing locale or scenario combinations", () => {
     expect(getScenarioContent("germany", "apartment_viewing", "fr", "A2")).toBeNull();
     expect(getScenarioContent("france", "apartment_viewing", "de", "A2")).toBeNull();
-    expect(getScenarioContent("germany", "job_interview", "de", "A2")).toBeNull();
+    expect(getScenarioContent("germany", "unknown_scene", "de", "A2")).toBeNull();
   });
 
   it("keeps CEFR profiles generic", () => {
@@ -149,8 +146,14 @@ describe("content loading", () => {
     expect(content?.locationId).toBe("apartment");
   });
 
-  it("keeps the residence-permit definition compatible but not playable", () => {
-    expect(getScenarioContent("germany", "residence_permit_appointment", "de", "A2")).toBeNull();
+  it("serves playable residence-permit content", () => {
+    const content = getScenarioContent(
+      "germany",
+      "residence_permit_appointment",
+      "de",
+      "A2",
+    );
+    expect(content).not.toBeNull();
     const parsed = ScenarioLocaleContentSchema.parse(residencePermitDeA2);
     expect(parsed.locationId).toBe("auslaenderbehoerde");
     expect(parsed.mission.objectives.map((item) => item.id)).toEqual(
@@ -171,11 +174,13 @@ describe("content loading", () => {
     const enabled = listScenarios("france").filter(
       (scenario) => scenario.status === "enabled",
     );
-    expect(enabled.map((scenario) => scenario.id).sort()).toEqual([
-      "apartment_viewing",
-      "city_registration",
-      "restaurant",
-    ]);
+    expect(enabled).toHaveLength(12);
+    const franceWorld = getWorld("france");
+    for (const categoryId of franceWorld?.categoryIds ?? []) {
+      expect(
+        enabled.filter((scenario) => scenario.categoryId === categoryId),
+      ).toHaveLength(4);
+    }
     for (const scenarioId of [
       "apartment_viewing",
       "city_registration",

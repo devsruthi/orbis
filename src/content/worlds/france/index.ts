@@ -1,5 +1,6 @@
 import { isCefrLevel, type CefrLevel } from "@/lib/shared/cefr";
 import type { Scenario, ScenarioLocaleContent } from "@/lib/shared/models";
+import { franceReadyLocaleContent, franceReadyScenarios } from "./ready";
 import { franceLocations } from "./locations";
 import { apartmentViewingFrA2 } from "./scenarios/apartment_viewing/locales/fr/a2";
 import { apartmentViewingScenario } from "./scenarios/apartment_viewing/scenario";
@@ -16,6 +17,7 @@ export const franceEnabledScenarios: Scenario[] = [
   apartmentViewingScenario,
   cityRegistrationScenario,
   restaurantScenario,
+  ...franceReadyScenarios,
 ];
 
 export const franceScenarios: Scenario[] = [...franceEnabledScenarios];
@@ -24,6 +26,7 @@ const localeContent: ScenarioLocaleContent[] = [
   apartmentViewingFrA2,
   cityRegistrationFrA2,
   restaurantFrA2,
+  ...franceReadyLocaleContent,
 ];
 
 function localeContentForLevel(

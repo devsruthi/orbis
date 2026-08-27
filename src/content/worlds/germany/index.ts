@@ -1,11 +1,12 @@
-import { isCefrLevel, type CefrLevel } from "@/lib/shared/cefr";
+import { CEFR_LEVELS, isCefrLevel, type CefrLevel } from "@/lib/shared/cefr";
 import type { Scenario, ScenarioLocaleContent } from "@/lib/shared/models";
-import { germanyComingSoonScenarios } from "./comingSoon";
 import { germanyLocations } from "./locations";
+import { germanyReadyLocaleContent, germanyReadyScenarios } from "./ready";
 import { apartmentViewingDeA2 } from "./scenarios/apartment_viewing/locales/de/a2";
 import { apartmentViewingScenario } from "./scenarios/apartment_viewing/scenario";
 import { cityRegistrationDeA2 } from "./scenarios/city_registration/locales/de/a2";
 import { cityRegistrationScenario } from "./scenarios/city_registration/scenario";
+import { residencePermitDeA2 } from "./scenarios/residence_permit/definition";
 import { residencePermitScenario } from "./scenarios/residence_permit/scenario";
 import { restaurantDeA2 } from "./scenarios/restaurant/locales/de/a2";
 import { restaurantScenario } from "./scenarios/restaurant/scenario";
@@ -13,24 +14,24 @@ import { restaurantScenario } from "./scenarios/restaurant/scenario";
 export { germanyCategories } from "./categories";
 export { germanyLocations } from "./locations";
 export { germanyWorld } from "./world";
-export { residencePermitDeA2 } from "./scenarios/residence_permit/definition";
+export { residencePermitDeA2 };
 
 export const germanyEnabledScenarios: Scenario[] = [
   apartmentViewingScenario,
   cityRegistrationScenario,
   restaurantScenario,
+  { ...residencePermitScenario, status: "enabled", supportedLevels: [...CEFR_LEVELS] },
+  ...germanyReadyScenarios,
 ];
 
-export const germanyScenarios: Scenario[] = [
-  ...germanyEnabledScenarios,
-  residencePermitScenario,
-  ...germanyComingSoonScenarios,
-];
+export const germanyScenarios: Scenario[] = [...germanyEnabledScenarios];
 
 const localeContent: ScenarioLocaleContent[] = [
   apartmentViewingDeA2,
   cityRegistrationDeA2,
   restaurantDeA2,
+  residencePermitDeA2,
+  ...germanyReadyLocaleContent,
 ];
 
 function localeContentForLevel(
