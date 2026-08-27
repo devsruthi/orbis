@@ -86,7 +86,9 @@ export function VoicePanel(props: {
       ) : (
         <>
           <p className="text-center text-sm text-stone-500">
-            Tap to speak. Speak in {props.languageName}. Take your time.
+            {state.status === "listening"
+              ? "Listening… Tap the mic when you are done."
+              : `Tap to speak. Speak in ${props.languageName}. Take your time.`}
           </p>
           <MicrophoneButton
             state={state}

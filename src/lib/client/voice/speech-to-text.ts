@@ -34,6 +34,34 @@ export type SpeechRecognitionLike = {
 
 type RecognitionCtor = new () => SpeechRecognitionLike;
 
+function joinTranscript(...parts: string[]) {
+  return parts
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ");
+}
+
+function transcriptFrom(
+  results: ArrayLike<RecognitionResultLike>,
+): { finals: string; interim: string } {
+  let finals = "";
+  let interim = "";
+  for (let i = 0; i < results.length; i += 1) {
+    const result = results[i];
+    const text = result?.[0]?.transcript?.trim() ?? "";
+    if (!text) {
+      continue;
+    }
+    if (result?.isFinal) {
+      finals = joinTranscript(finals, text);
+    } else {
+      interim = joinTranscript(interim, text);
+    }
+  }
+  return { finals, interim };
+}
+
 function recognitionConstructor(
   globalObject: typeof globalThis,
 ): RecognitionCtor | null {
@@ -81,7 +109,16 @@ export function createWebSpeechToText(
   globalObject: typeof globalThis = globalThis,
 ): SpeechToTextProvider {
   let active: SpeechRecognitionLike | null = null;
-  let finalized = false;
+  let wantListening = false;
+
+  const finishListening = () => {
+    wantListening = false;
+    try {
+      active?.stop();
+    } catch {
+      /* already stopped */
+    }
+  };
 
   return {
     isSupported() {
@@ -97,52 +134,72 @@ export function createWebSpeechToText(
         return;
       }
       this.cancel();
-      finalized = false;
+      wantListening = true;
+      let committed = "";
       let heard = "";
       let settled = false;
       const recognition = new Ctor();
       recognition.lang = speechLocale(options.language);
       recognition.interimResults = true;
-      recognition.continuous = false;
+      recognition.continuous = true;
       recognition.maxAlternatives = 1;
       const settleError = (error: VoiceError) => {
         if (settled) {
           return;
         }
         settled = true;
+        wantListening = false;
         options.onError(error);
       };
-      recognition.onresult = (event) => {
-        const last = event.results[event.results.length - 1];
-        const text = last?.[0]?.transcript?.trim() ?? "";
-        if (!text) {
+      const restartIfNeeded = () => {
+        if (!wantListening || settled || active !== recognition) {
           return;
         }
-        heard = text;
-        if (last?.isFinal) {
-          finalized = true;
-          settled = true;
-          options.onFinal(text);
-        } else {
-          options.onInterim(text);
+        try {
+          recognition.start();
+        } catch {
+          /* already started */
         }
+        if (!wantListening) {
+          try {
+            recognition.stop();
+          } catch {
+            /* already stopped */
+          }
+        }
+        if (!wantListening) {
+          try {
+            recognition.stop();
+          } catch {
+            /* already stopped */
+          }
+        }
+      };
+      recognition.onresult = (event) => {
+        const { finals, interim } = transcriptFrom(event.results);
+        heard = joinTranscript(committed, finals, interim);
+        options.onInterim(heard);
       };
       recognition.onerror = (event) => {
         const code = event.error ?? "unknown";
-        if (code === "aborted") {
-          settled = true;
+        if (code === "no-speech" || code === "aborted") {
           return;
         }
         settleError(recognitionError(code));
       };
       recognition.onend = () => {
-        if (settled || finalized) {
+        if (settled || active !== recognition) {
           return;
         }
-        if (heard) {
-          finalized = true;
+        committed = heard;
+        if (wantListening) {
+          restartIfNeeded();
+          return;
+        }
+        const text = heard.trim();
+        if (text) {
           settled = true;
-          options.onFinal(heard);
+          options.onFinal(text);
           return;
         }
         settleError({
@@ -161,9 +218,10 @@ export function createWebSpeechToText(
       }
     },
     stop() {
-      active?.stop();
+      finishListening();
     },
     cancel() {
+      wantListening = false;
       const current = active;
       active = null;
       if (!current) {

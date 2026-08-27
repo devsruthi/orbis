@@ -176,7 +176,7 @@ describe("speech-to-text provider abstraction", () => {
     expect(errorCode).toBe("unsupported");
   });
 
-  it("starts recognition with the mapped locale and returns a final transcript", () => {
+  it("starts recognition with the mapped locale and returns a final transcript after stop", () => {
     const started: string[] = [];
     function FakeRecognition(this: SpeechRecognitionLike) {
       this.lang = "";
@@ -192,7 +192,9 @@ describe("speech-to-text provider abstraction", () => {
           results: [{ isFinal: true, 0: { transcript: "Ich möchte die Wohnung sehen." } }],
         });
       };
-      this.stop = () => undefined;
+      this.stop = () => {
+        this.onend?.();
+      };
       this.abort = () => undefined;
     }
     const provider = createWebSpeechToText({
@@ -200,9 +202,12 @@ describe("speech-to-text provider abstraction", () => {
     } as unknown as typeof globalThis);
     expect(provider.isSupported()).toBe(true);
     let finalText = "";
+    let interimText = "";
     provider.start({
       language: "de",
-      onInterim: () => undefined,
+      onInterim: (text) => {
+        interimText = text;
+      },
       onFinal: (text) => {
         finalText = text;
       },
@@ -211,6 +216,9 @@ describe("speech-to-text provider abstraction", () => {
       },
     });
     expect(started).toEqual(["de-DE"]);
+    expect(interimText).toBe("Ich möchte die Wohnung sehen.");
+    expect(finalText).toBe("");
+    provider.stop();
     expect(finalText).toBe("Ich möchte die Wohnung sehen.");
   });
 
@@ -275,7 +283,8 @@ describe("speech-to-text provider abstraction", () => {
     expect(codes).toEqual(["permission_denied"]);
   });
 
-  it("ignores aborted recognition instead of surfacing an error", () => {
+  it("keeps listening through silence until the learner stops", () => {
+    let starts = 0;
     let errorCode = "";
     function FakeRecognition(this: SpeechRecognitionLike) {
       this.lang = "";
@@ -286,8 +295,51 @@ describe("speech-to-text provider abstraction", () => {
       this.onerror = null;
       this.onend = null;
       this.start = () => {
-        this.onerror?.({ error: "aborted" });
+        starts += 1;
+        if (starts === 1) {
+          this.onerror?.({ error: "no-speech" });
+          this.onend?.();
+        }
+      };
+      this.stop = () => {
         this.onend?.();
+      };
+      this.abort = () => undefined;
+    }
+    const provider = createWebSpeechToText({
+      SpeechRecognition: FakeRecognition,
+    } as unknown as typeof globalThis);
+    provider.start({
+      language: "de",
+      onInterim: () => undefined,
+      onFinal: () => undefined,
+      onError: (error) => {
+        errorCode = error.code;
+      },
+    });
+    expect(starts).toBe(2);
+    expect(errorCode).toBe("");
+    provider.stop();
+    expect(errorCode).toBe("no_speech");
+  });
+
+  it("ignores aborted recognition instead of surfacing an error", () => {
+    let starts = 0;
+    let errorCode = "";
+    function FakeRecognition(this: SpeechRecognitionLike) {
+      this.lang = "";
+      this.interimResults = false;
+      this.continuous = false;
+      this.maxAlternatives = 1;
+      this.onresult = null;
+      this.onerror = null;
+      this.onend = null;
+      this.start = () => {
+        starts += 1;
+        if (starts === 1) {
+          this.onerror?.({ error: "aborted" });
+          this.onend?.();
+        }
       };
       this.stop = () => undefined;
       this.abort = () => undefined;
@@ -303,6 +355,7 @@ describe("speech-to-text provider abstraction", () => {
         errorCode = error.code;
       },
     });
+    expect(starts).toBe(2);
     expect(errorCode).toBe("");
   });
 
