@@ -2,7 +2,6 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { ConversationError } from "./errors";
 import { createDefaultLearner } from "./learner";
 import { upsertLearnerPreferences } from "./preferences";
 import { JsonFilePersistence } from "@/lib/server/persistence";
@@ -37,7 +36,7 @@ describe("learner preferences", () => {
     expect(await persistence.getLearner(id)).toEqual(learner);
   });
 
-  it("rejects languages and levels that are not ready yet", async () => {
+  it("rejects languages that are not ready yet", async () => {
     const persistence = await store();
     await expect(
       upsertLearnerPreferences(
@@ -45,12 +44,15 @@ describe("learner preferences", () => {
         persistence,
       ),
     ).rejects.toMatchObject({ status: 400 });
-    await expect(
-      upsertLearnerPreferences(
-        { id: createId(), language: "de", level: "B1" },
-        persistence,
-      ),
-    ).rejects.toBeInstanceOf(ConversationError);
+  });
+
+  it("saves German CEFR levels beyond A2", async () => {
+    const persistence = await store();
+    const learner = await upsertLearnerPreferences(
+      { id: createId(), language: "de", level: "B1" },
+      persistence,
+    );
+    expect(learner.cefrLevel).toBe("B1");
   });
 
   it("updates an existing learner without dropping progress fields", async () => {

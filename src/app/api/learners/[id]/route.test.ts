@@ -52,7 +52,7 @@ describe("learner preferences API", () => {
     expect(dashboardBody.learner.setupComplete).toBe(true);
   });
 
-  it("rejects languages and levels that are not ready", async () => {
+  it("rejects languages that are not ready", async () => {
     dir = await mkdtemp(path.join(tmpdir(), "orbis-prefs-api-reject-"));
     setPersistenceForTests(new JsonFilePersistence(dir));
     const id = createId();
@@ -66,6 +66,12 @@ describe("learner preferences API", () => {
       { params: Promise.resolve({ id }) },
     );
     expect(spanish.status).toBe(400);
+  });
+
+  it("saves German B1", async () => {
+    dir = await mkdtemp(path.join(tmpdir(), "orbis-prefs-api-b1-"));
+    setPersistenceForTests(new JsonFilePersistence(dir));
+    const id = createId();
 
     const b1 = await PATCH(
       new Request("http://orbis.test", {
@@ -75,6 +81,8 @@ describe("learner preferences API", () => {
       }),
       { params: Promise.resolve({ id }) },
     );
-    expect(b1.status).toBe(400);
+    expect(b1.status).toBe(200);
+    const body = (await b1.json()) as { learner: { level: string } };
+    expect(body.learner.level).toBe("B1");
   });
 });

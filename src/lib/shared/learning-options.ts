@@ -82,7 +82,7 @@ export const LEARNING_LEVELS: LearningLevelOption[] = [
 ];
 
 const READY_LEVELS: Record<string, CefrLevel[]> = {
-  de: ["A2"],
+  de: [...CEFR_LEVELS],
 };
 
 export function languageOption(code: string): LearningLanguageOption | null {

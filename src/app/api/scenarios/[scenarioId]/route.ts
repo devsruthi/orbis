@@ -33,7 +33,11 @@ export async function GET(
   const world = getWorld(scenario.worldId);
   const language =
     query.data.language ?? world?.defaultLanguage ?? scenario.supportedLanguages[0];
-  const level = query.data.level ?? scenario.supportedLevels[0];
+  const level =
+    query.data.level ??
+    (scenario.supportedLevels.includes("A2")
+      ? "A2"
+      : scenario.supportedLevels[0]);
 
   if (scenario.status !== "enabled") {
     return jsonOk({

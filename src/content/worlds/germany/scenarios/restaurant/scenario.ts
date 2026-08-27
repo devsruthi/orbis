@@ -1,3 +1,4 @@
+import { CEFR_LEVELS } from "@/lib/shared/cefr";
 import type { Scenario } from "@/lib/shared/models";
 
 export const restaurantScenario: Scenario = {
@@ -6,7 +7,7 @@ export const restaurantScenario: Scenario = {
   categoryId: "everyday",
   locationId: "restaurant",
   status: "enabled",
-  supportedLevels: ["A2"],
+  supportedLevels: [...CEFR_LEVELS],
   supportedLanguages: ["de"],
   title: { en: "Restaurant" },
   character: {

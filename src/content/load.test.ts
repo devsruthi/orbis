@@ -72,7 +72,7 @@ describe("content loading", () => {
     );
   });
 
-  it("loads German A2 content for the three enabled scenarios", () => {
+  it("loads German CEFR content for enabled scenarios", () => {
     for (const scenarioId of [
       "apartment_viewing",
       "city_registration",
@@ -81,14 +81,16 @@ describe("content loading", () => {
       const scenario = getScenario(scenarioId);
       expect(scenario).not.toBeNull();
       expect(ScenarioSchema.parse(scenario)).toMatchObject({ id: scenarioId });
-      const content = getScenarioContent("germany", scenarioId, "de", "A2");
-      expect(content).not.toBeNull();
-      expect(ScenarioLocaleContentSchema.parse(content).level).toBe("A2");
+      expect(scenario?.supportedLevels).toEqual(["A1", "A2", "B1", "B2", "C1"]);
+      for (const level of ["A1", "A2", "B1", "B2", "C1"] as const) {
+        const content = getScenarioContent("germany", scenarioId, "de", level);
+        expect(content).not.toBeNull();
+        expect(ScenarioLocaleContentSchema.parse(content).level).toBe(level);
+      }
     }
   });
 
-  it("does not load missing locale or level combinations", () => {
-    expect(getScenarioContent("germany", "apartment_viewing", "de", "B2")).toBeNull();
+  it("does not load missing locale or scenario combinations", () => {
     expect(getScenarioContent("germany", "apartment_viewing", "fr", "A2")).toBeNull();
     expect(getScenarioContent("germany", "job_interview", "de", "A2")).toBeNull();
   });

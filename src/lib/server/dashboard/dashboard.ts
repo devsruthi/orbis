@@ -109,7 +109,9 @@ export async function getLearnerDashboard(
           categoryTitle: category.title.en,
           title: scenario.title.en,
           status: scenario.status,
-          level: scenarioLevel(scenario),
+          level: scenario.supportedLevels.includes(level)
+            ? level
+            : scenarioLevel(scenario),
           language: scenario.supportedLanguages[0] ?? language,
           supportedConcepts: scenario.supportedConcepts,
           attemptStatus: progress.status,

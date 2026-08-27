@@ -1,3 +1,4 @@
+import { isCefrLevel, type CefrLevel } from "@/lib/shared/cefr";
 import type { Scenario, ScenarioLocaleContent } from "@/lib/shared/models";
 import { germanyComingSoonScenarios } from "./comingSoon";
 import { germanyLocations } from "./locations";
@@ -32,19 +33,56 @@ const localeContent: ScenarioLocaleContent[] = [
   restaurantDeA2,
 ];
 
+function localeContentForLevel(
+  content: ScenarioLocaleContent,
+  level: CefrLevel,
+): ScenarioLocaleContent {
+  if (content.level === level) {
+    return content;
+  }
+  return {
+    ...content,
+    level,
+    mission: {
+      ...content.mission,
+      difficulty: level,
+    },
+  };
+}
+
 export function getGermanyScenarioContent(
   scenarioId: string,
   language: string,
   level: string,
 ): ScenarioLocaleContent | null {
-  return (
-    localeContent.find(
-      (content) =>
-        content.scenarioId === scenarioId &&
-        content.language === language &&
-        content.level === level,
-    ) ?? null
+  const exact = localeContent.find(
+    (content) =>
+      content.scenarioId === scenarioId &&
+      content.language === language &&
+      content.level === level,
   );
+  if (exact) {
+    return exact;
+  }
+  if (!isCefrLevel(level)) {
+    return null;
+  }
+  const scenario = germanyScenarios.find((item) => item.id === scenarioId);
+  if (
+    !scenario ||
+    scenario.status !== "enabled" ||
+    !scenario.supportedLevels.includes(level)
+  ) {
+    return null;
+  }
+  const template = localeContent.find(
+    (content) =>
+      content.scenarioId === scenarioId && content.language === language,
+  );
+  if (!template) {
+    return null;
+  }
+  return localeContentForLevel(template, level);
 }
 
 export function getGermanyLocation(locationId: string) {

@@ -1,3 +1,4 @@
+import { CEFR_LEVELS } from "@/lib/shared/cefr";
 import type { Scenario } from "@/lib/shared/models";
 
 export const cityRegistrationScenario: Scenario = {
@@ -6,7 +7,7 @@ export const cityRegistrationScenario: Scenario = {
   categoryId: "city_registration",
   locationId: "buergeramt",
   status: "enabled",
-  supportedLevels: ["A2"],
+  supportedLevels: [...CEFR_LEVELS],
   supportedLanguages: ["de"],
   title: { en: "Anmeldung / Bürgeramt" },
   character: {

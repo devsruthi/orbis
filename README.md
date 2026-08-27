@@ -281,7 +281,7 @@ responses. It does not show stack traces or raw `fetch` failures.
 ## Current functionality
 
 - Germany world with reusable locations
-- German A2
+- German A1–C1 (same missions; CEFR controls how the character speaks)
 - Apartment viewing, Anmeldung / Bürgeramt, and Restaurant missions
 - Scenario variants so repeats are not identical
 - Condition-based events and lightweight branching
@@ -293,8 +293,8 @@ responses. It does not show stack traces or raw `fetch` failures.
 - Targeted fill-in-the-blank / short-answer reviews
 - Next-practice scenario recommendations from learner weaknesses
 - Learner home, explore, practice, and progress views
-- First-run setup: choose a language, then a CEFR level. Only German A2
-  is playable today; other languages and levels show as coming soon
+- First-run setup: choose a language, then a CEFR level. German A1–C1 is
+  playable today; other languages show as coming soon
 - Derived dashboard: scores, streaks, weaknesses, and review counts
 - Tauri 2 Android client using the same frontend
 - Voice mode: speech-to-text, existing conversation API, text-to-speech

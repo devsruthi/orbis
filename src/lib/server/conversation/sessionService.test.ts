@@ -294,10 +294,21 @@ describe("session service", () => {
     await expect(
       sessions.createSession({
         ...input,
-        level: "B2",
+        language: "fr",
         learnerId,
       }),
     ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("creates German sessions at A1–C1 with the matching CEFR level", async () => {
+    const { sessions } = await service();
+    const created = await sessions.createSession({
+      ...input,
+      level: "B2",
+      learnerId: createId(),
+    });
+    expect(created.level).toBe("B2");
+    expect(created.mission.difficulty).toBe("B2");
   });
 
   it("snapshots location, variant, and simulation on session create", async () => {
