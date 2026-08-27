@@ -117,7 +117,8 @@ export function HomeDashboard() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-serif text-4xl font-medium tracking-tight sm:text-5xl">
-            Step into the moment…
+            Step into the moment.
+            <span className="mt-1 block">Speak the language.</span>
           </h1>
           <p className="mt-2 max-w-xl text-base text-stone-600 dark:text-zinc-400">
             AI-generated everyday situations.
