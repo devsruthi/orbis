@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -34,6 +41,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [pendingUserText, setPendingUserText] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [messageCheck, setMessageCheck] = useState<PublicMessageCheck | null>(
     null,
@@ -47,6 +55,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   const [pollNonce, setPollNonce] = useState(0);
   const [translationsOn, setTranslationsOn] = useState(true);
   const bottom = useRef<HTMLDivElement>(null);
+  const composerInput = useRef<HTMLInputElement>(null);
   const polls = useRef(0);
   const sendingRef = useRef(false);
   const completingRef = useRef(false);
@@ -64,6 +73,36 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
     sessionRef.current = session;
   }, [session]);
 
+  const postTurn = useCallback(async (text: string, inputMode: "text" | "voice") => {
+    const current = sessionRef.current;
+    if (!current) {
+      throw new Error("Session not found.");
+    }
+    sendingRef.current = true;
+    setSending(true);
+    setError(null);
+    setMessageCheck(null);
+    setPendingUserText(text);
+    if (inputMode === "text") {
+      setMessage("");
+    }
+    try {
+      const result = await orbisApi.sendTurn(current.id, text, inputMode);
+      setSession(result.session);
+      setPendingUserText(null);
+      return { reply: result.reply };
+    } catch (caught) {
+      setPendingUserText(null);
+      if (inputMode === "text") {
+        setMessage(text);
+      }
+      throw caught;
+    } finally {
+      sendingRef.current = false;
+      setSending(false);
+    }
+  }, []);
+
   useEffect(() => {
     try {
       if (window.localStorage.getItem("orbis.englishTranslation") === "off") {
@@ -77,15 +116,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   const voice = useVoiceConversation({
     language: session?.language ?? "de",
     enabled: Boolean(session && session.status === "active"),
-    sendTurn: async (text, inputMode) => {
-      const current = sessionRef.current;
-      if (!current) {
-        throw new Error("Session not found.");
-      }
-      const result = await orbisApi.sendTurn(current.id, text, inputMode);
-      setSession(result.session);
-      return { reply: result.reply };
-    },
+    sendTurn: postTurn,
   });
 
   useEffect(() => {
@@ -167,7 +198,13 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: "end" });
-  }, [session?.turns.length]);
+  }, [session?.turns.length, pendingUserText]);
+
+  useEffect(() => {
+    if (messageCheck && messageCheck.issues.length > 0) {
+      composerInput.current?.focus();
+    }
+  }, [messageCheck]);
 
   useEffect(() => {
     if (session?.status !== "processing" || evaluation) {
@@ -218,32 +255,28 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   }, [session?.status, sessionId, evaluation, pollNonce]);
 
   async function deliverTurn(text: string) {
-    if (!session) {
+    if (!sessionRef.current || sendingRef.current) {
       return;
     }
     voice.cancelListening();
     voice.stopSpeech();
-    setSending(true);
-    setError(null);
-    setMessageCheck(null);
     try {
-      const result = await orbisApi.sendTurn(session.id, text, "text");
-      setSession(result.session);
-      setMessage("");
+      await postTurn(text, "text");
     } catch (caught) {
       setError(
         caught instanceof ApiError || caught instanceof NetworkError
           ? caught.message
           : userFacingRequestError(caught),
       );
-    } finally {
-      setSending(false);
     }
   }
 
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    if (!session || sending || completing || checking) {
+  async function submitComposer() {
+    if (!session || sendingRef.current || completing || checking) {
+      return;
+    }
+    if (messageCheck && messageCheck.issues.length > 0) {
+      await deliverTurn(messageCheck.corrected);
       return;
     }
     const text = message.trim();
@@ -266,6 +299,19 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
     } finally {
       setChecking(false);
     }
+  }
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    await submitComposer();
+  }
+
+  function onComposerKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter" || event.nativeEvent.isComposing) {
+      return;
+    }
+    event.preventDefault();
+    void submitComposer();
   }
 
   async function onRestart() {
@@ -353,7 +399,11 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
     session.scenarioTitle ||
     session.scenarioId;
   const listening = voice.state.status === "listening";
-  const composerBusy = sending || completing || checking || restarting;
+  const awaitingReply =
+    sending ||
+    Boolean(pendingUserText) ||
+    voice.state.status === "responding";
+  const composerBusy = awaitingReply || completing || checking || restarting;
   const requiredObjectives =
     session.simulation?.objectives.filter((item) => item.required) ?? [];
   const objectivesComplete =
@@ -449,52 +499,34 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
       ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pb-3">
-        {session.turns.length > 0 ? (
-          <section className="flex flex-col gap-2">
-            {session.turns.map((turn) => (
-              <div
-                key={turn.id}
-                className={
-                  turn.role === "user"
-                    ? "flex max-w-[85%] items-end gap-2 self-end"
-                    : "flex max-w-[85%] items-end gap-2 self-start"
-                }
-              >
-                {turn.role === "user" && voice.capabilities.textToSpeech ? (
-                  <PlayMessageButton
-                    text={turn.text}
-                    onPlay={voice.speakText}
-                  />
-                ) : null}
-                <div
-                  className={
-                    turn.role === "user"
-                      ? "min-w-0 rounded-3xl bg-orbis-dusk px-4 py-2 text-sm text-white"
-                      : "min-w-0 rounded-3xl bg-white px-4 py-3 text-sm shadow-sm dark:bg-zinc-900"
-                  }
-                >
-                  <p className="whitespace-pre-wrap break-words">{turn.text}</p>
-                  {turn.role !== "user" &&
-                  translationsOn &&
-                  turn.translationEn ? (
-                    <p className="mt-1.5 text-xs leading-relaxed text-stone-500 dark:text-zinc-400">
-                      {turn.translationEn}
-                    </p>
-                  ) : null}
-                </div>
-                {turn.role !== "user" && voice.capabilities.textToSpeech ? (
-                  <PlayMessageButton
-                    text={turn.text}
-                    onPlay={voice.speakText}
-                  />
-                ) : null}
-              </div>
-            ))}
-            <div ref={bottom} />
-          </section>
-        ) : (
+        <section className="flex flex-col gap-2">
+          {session.turns.map((turn) => (
+            <ChatTurnRow
+              key={turn.id}
+              role={turn.role === "user" ? "user" : "character"}
+              text={turn.text}
+              translation={
+                turn.role !== "user" && translationsOn
+                  ? turn.translationEn
+                  : undefined
+              }
+              canPlay={voice.capabilities.textToSpeech}
+              onPlay={voice.speakText}
+            />
+          ))}
+          {pendingUserText ? (
+            <>
+              <ChatTurnRow
+                role="user"
+                text={pendingUserText}
+                canPlay={voice.capabilities.textToSpeech}
+                onPlay={voice.speakText}
+              />
+              <ThinkingTurnRow />
+            </>
+          ) : null}
           <div ref={bottom} />
-        )}
+        </section>
 
         {session.status === "active" && missionStatus === "failed" ? (
           <section className="orbis-card p-5">
@@ -628,6 +660,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
               </label>
               <input
                 id="orbis-message"
+                ref={composerInput}
                 value={
                   listening
                     ? voice.state.interimTranscript
@@ -639,6 +672,8 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
                     setMessageCheck(null);
                   }
                 }}
+                onKeyDown={onComposerKeyDown}
+                enterKeyHint="send"
                 maxLength={4000}
                 placeholder={`Type your message in ${languageName}…`}
                 className="h-12 w-full rounded-full border border-stone-300 bg-white py-2 pl-4 pr-12 text-sm dark:border-zinc-700 dark:bg-zinc-950"
@@ -687,6 +722,73 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
         </div>
       ) : null}
     </main>
+  );
+}
+
+function ChatTurnRow({
+  role,
+  text,
+  translation,
+  canPlay,
+  onPlay,
+}: {
+  role: "user" | "character";
+  text: string;
+  translation?: string;
+  canPlay: boolean;
+  onPlay: (text: string) => void;
+}) {
+  const user = role === "user";
+  return (
+    <div
+      className={
+        user
+          ? "flex max-w-[85%] items-end gap-2 self-end"
+          : "flex max-w-[85%] items-end gap-2 self-start"
+      }
+    >
+      {user && canPlay ? (
+        <PlayMessageButton text={text} onPlay={onPlay} />
+      ) : null}
+      <div
+        className={
+          user
+            ? "min-w-0 rounded-3xl bg-orbis-dusk px-4 py-2 text-sm text-white"
+            : "min-w-0 rounded-3xl bg-white px-4 py-3 text-sm shadow-sm dark:bg-zinc-900"
+        }
+      >
+        <p className="whitespace-pre-wrap break-words">{text}</p>
+        {translation ? (
+          <p className="mt-1.5 text-xs leading-relaxed text-stone-500 dark:text-zinc-400">
+            {translation}
+          </p>
+        ) : null}
+      </div>
+      {!user && canPlay ? (
+        <PlayMessageButton text={text} onPlay={onPlay} />
+      ) : null}
+    </div>
+  );
+}
+
+function ThinkingTurnRow() {
+  return (
+    <div className="flex max-w-[85%] items-end gap-2 self-start">
+      <div
+        className="min-w-0 rounded-3xl bg-white px-4 py-3 text-sm shadow-sm dark:bg-zinc-900"
+        aria-live="polite"
+        aria-label="The character is thinking"
+      >
+        <p className="flex items-center gap-2 text-stone-500 dark:text-zinc-400">
+          <span className="orbis-thinking-dots" aria-hidden>
+            <span />
+            <span />
+            <span />
+          </span>
+          Thinking…
+        </p>
+      </div>
+    </div>
   );
 }
 

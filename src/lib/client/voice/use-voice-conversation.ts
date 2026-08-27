@@ -123,6 +123,9 @@ export function useVoiceConversation(options: {
     if (!body) {
       return;
     }
+    if (stateRef.current.status !== "reviewing") {
+      return;
+    }
     if (override && override.trim() !== stateRef.current.transcript.trim()) {
       dispatch({ type: "edit_transcript", text: override });
     }

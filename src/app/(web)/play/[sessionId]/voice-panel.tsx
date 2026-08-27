@@ -99,10 +99,6 @@ export function VoiceDock(props: {
             ? "Listening… Tap the mic when you are done."
             : statusLabel(state.status)}
         </p>
-      ) : state.status === "responding" ? (
-        <p className="text-center text-sm text-stone-500" aria-live="polite">
-          Thinking…
-        </p>
       ) : null}
 
       {state.interimTranscript ? (
