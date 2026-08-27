@@ -312,20 +312,23 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">{session.character.name}</p>
-            {captionsOn ? (
-              <p className="mt-1 font-serif text-lg leading-relaxed">
-                “{lastCharacterTurn.text}”
-              </p>
-            ) : (
-              <p className="mt-1 text-sm text-stone-400">Captions off</p>
-            )}
-            {voice.capabilities.textToSpeech ? (
-              <PlayMessageButton
-                text={lastCharacterTurn.text}
-                onPlay={voice.speakText}
-                className="mt-2 text-sm text-orbis-gold-deep"
-              />
-            ) : null}
+            <div className="mt-1 flex items-start gap-2">
+              {captionsOn ? (
+                <p className="min-w-0 flex-1 font-serif text-lg leading-relaxed">
+                  “{lastCharacterTurn.text}”
+                </p>
+              ) : (
+                <p className="min-w-0 flex-1 text-sm text-stone-400">
+                  Captions off
+                </p>
+              )}
+              {voice.capabilities.textToSpeech ? (
+                <PlayMessageButton
+                  text={lastCharacterTurn.text}
+                  onPlay={voice.speakText}
+                />
+              ) : null}
+            </div>
           </div>
         </section>
       ) : null}
@@ -337,20 +340,29 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
               key={turn.id}
               className={
                 turn.role === "user"
-                  ? "self-end max-w-[85%] rounded-3xl bg-orbis-dusk px-4 py-2 text-sm text-white"
-                  : "self-start max-w-[85%] rounded-3xl bg-[#efe6d6] px-4 py-2 text-sm dark:bg-zinc-800"
+                  ? "flex max-w-[85%] items-end gap-2 self-end"
+                  : "flex max-w-[85%] items-end gap-2 self-start"
               }
             >
-              <p className="whitespace-pre-wrap break-words">{turn.text}</p>
-              {voice.capabilities.textToSpeech ? (
+              {turn.role === "user" && voice.capabilities.textToSpeech ? (
                 <PlayMessageButton
                   text={turn.text}
                   onPlay={voice.speakText}
-                  className={
-                    turn.role === "user"
-                      ? "mt-1 text-xs text-white/85"
-                      : "mt-1 text-xs text-orbis-gold-deep"
-                  }
+                />
+              ) : null}
+              <div
+                className={
+                  turn.role === "user"
+                    ? "min-w-0 rounded-3xl bg-orbis-dusk px-4 py-2 text-sm text-white"
+                    : "min-w-0 rounded-3xl bg-[#efe6d6] px-4 py-2 text-sm dark:bg-zinc-800"
+                }
+              >
+                <p className="whitespace-pre-wrap break-words">{turn.text}</p>
+              </div>
+              {turn.role !== "user" && voice.capabilities.textToSpeech ? (
+                <PlayMessageButton
+                  text={turn.text}
+                  onPlay={voice.speakText}
                 />
               ) : null}
             </div>
@@ -615,21 +627,18 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
 function PlayMessageButton({
   text,
   onPlay,
-  className,
 }: {
   text: string;
   onPlay: (text: string) => void;
-  className: string;
 }) {
   return (
     <button
       type="button"
       onClick={() => onPlay(text)}
-      className={`inline-flex items-center gap-1 ${className}`}
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-orbis-gold-deep hover:bg-orbis-gold/15"
       aria-label="Play this message"
     >
       <SpeakerIcon className="h-4 w-4" />
-      Play
     </button>
   );
 }
