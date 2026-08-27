@@ -99,11 +99,19 @@ export function createWebSpeechToText(
       this.cancel();
       finalized = false;
       let heard = "";
+      let settled = false;
       const recognition = new Ctor();
       recognition.lang = speechLocale(options.language);
       recognition.interimResults = true;
       recognition.continuous = false;
       recognition.maxAlternatives = 1;
+      const settleError = (error: VoiceError) => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        options.onError(error);
+      };
       recognition.onresult = (event) => {
         const last = event.results[event.results.length - 1];
         const text = last?.[0]?.transcript?.trim() ?? "";
@@ -113,24 +121,31 @@ export function createWebSpeechToText(
         heard = text;
         if (last?.isFinal) {
           finalized = true;
+          settled = true;
           options.onFinal(text);
         } else {
           options.onInterim(text);
         }
       };
       recognition.onerror = (event) => {
-        options.onError(recognitionError(event.error ?? "unknown"));
+        const code = event.error ?? "unknown";
+        if (code === "aborted") {
+          settled = true;
+          return;
+        }
+        settleError(recognitionError(code));
       };
       recognition.onend = () => {
-        if (finalized) {
+        if (settled || finalized) {
           return;
         }
         if (heard) {
           finalized = true;
+          settled = true;
           options.onFinal(heard);
           return;
         }
-        options.onError({
+        settleError({
           code: "no_speech",
           message: "We didn't catch that. Try again, or continue with text.",
         });
@@ -139,7 +154,7 @@ export function createWebSpeechToText(
       try {
         recognition.start();
       } catch {
-        options.onError({
+        settleError({
           code: "recognition_failed",
           message: "Something went wrong. You can continue with text.",
         });

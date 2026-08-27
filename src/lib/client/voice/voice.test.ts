@@ -244,6 +244,68 @@ describe("speech-to-text provider abstraction", () => {
     expect(message).toMatch(/continue with text/i);
   });
 
+  it("does not replace a permission error with no-speech when recognition ends", () => {
+    const codes: string[] = [];
+    function FakeRecognition(this: SpeechRecognitionLike) {
+      this.lang = "";
+      this.interimResults = false;
+      this.continuous = false;
+      this.maxAlternatives = 1;
+      this.onresult = null;
+      this.onerror = null;
+      this.onend = null;
+      this.start = () => {
+        this.onerror?.({ error: "not-allowed" });
+        this.onend?.();
+      };
+      this.stop = () => undefined;
+      this.abort = () => undefined;
+    }
+    const provider = createWebSpeechToText({
+      SpeechRecognition: FakeRecognition,
+    } as unknown as typeof globalThis);
+    provider.start({
+      language: "de",
+      onInterim: () => undefined,
+      onFinal: () => undefined,
+      onError: (error) => {
+        codes.push(error.code);
+      },
+    });
+    expect(codes).toEqual(["permission_denied"]);
+  });
+
+  it("ignores aborted recognition instead of surfacing an error", () => {
+    let errorCode = "";
+    function FakeRecognition(this: SpeechRecognitionLike) {
+      this.lang = "";
+      this.interimResults = false;
+      this.continuous = false;
+      this.maxAlternatives = 1;
+      this.onresult = null;
+      this.onerror = null;
+      this.onend = null;
+      this.start = () => {
+        this.onerror?.({ error: "aborted" });
+        this.onend?.();
+      };
+      this.stop = () => undefined;
+      this.abort = () => undefined;
+    }
+    const provider = createWebSpeechToText({
+      SpeechRecognition: FakeRecognition,
+    } as unknown as typeof globalThis);
+    provider.start({
+      language: "de",
+      onInterim: () => undefined,
+      onFinal: () => undefined,
+      onError: (error) => {
+        errorCode = error.code;
+      },
+    });
+    expect(errorCode).toBe("");
+  });
+
   it("prefers Web Speech when present and otherwise uses the native bridge", () => {
     function FakeRecognition(this: SpeechRecognitionLike) {
       this.lang = "";

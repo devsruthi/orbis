@@ -7,10 +7,8 @@ import {
   createWebTextToSpeech,
   detectVoiceCapabilities,
   initialVoiceState,
-  permissionError,
   readSpeechSpeed,
   reduceVoice,
-  requestMicrophonePermission,
   toConversationTurnBody,
   voiceErrorMessage,
   writeSpeechSpeed,
@@ -70,7 +68,7 @@ export function useVoiceConversation(options: {
     [dispatch, options.language, tts],
   );
 
-  const startListening = useCallback(async () => {
+  const startListening = useCallback(() => {
     if (!options.enabled || !canStartListening(stateRef.current.status)) {
       return;
     }
@@ -92,11 +90,8 @@ export function useVoiceConversation(options: {
       });
       return;
     }
-    const permission = await requestMicrophonePermission();
-    if (permission === "denied") {
-      dispatch({ type: "error", error: permissionError(permission) });
-      return;
-    }
+    // Start recognition in the same click turn. Awaiting getUserMedia first
+    // drops the user-gesture, and Chrome then reports not-allowed.
     dispatch({ type: "listening" });
     stt.start({
       language: options.language,
