@@ -320,15 +320,11 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
               <p className="mt-1 text-sm text-stone-400">Captions off</p>
             )}
             {voice.capabilities.textToSpeech ? (
-              <button
-                type="button"
-                onClick={() => voice.speakText(lastCharacterTurn.text)}
-                className="mt-2 inline-flex items-center gap-1 text-sm text-orbis-gold-deep"
-                aria-label="Play this reply"
-              >
-                <SpeakerIcon className="h-4 w-4" />
-                Play
-              </button>
+              <PlayMessageButton
+                text={lastCharacterTurn.text}
+                onPlay={voice.speakText}
+                className="mt-2 text-sm text-orbis-gold-deep"
+              />
             ) : null}
           </div>
         </section>
@@ -346,6 +342,17 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
               }
             >
               <p className="whitespace-pre-wrap break-words">{turn.text}</p>
+              {voice.capabilities.textToSpeech ? (
+                <PlayMessageButton
+                  text={turn.text}
+                  onPlay={voice.speakText}
+                  className={
+                    turn.role === "user"
+                      ? "mt-1 text-xs text-white/85"
+                      : "mt-1 text-xs text-orbis-gold-deep"
+                  }
+                />
+              ) : null}
             </div>
           ))}
           <div ref={bottom} />
@@ -602,5 +609,27 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
         <p className="text-sm text-red-600">{error}</p>
       ) : null}
     </main>
+  );
+}
+
+function PlayMessageButton({
+  text,
+  onPlay,
+  className,
+}: {
+  text: string;
+  onPlay: (text: string) => void;
+  className: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onPlay(text)}
+      className={`inline-flex items-center gap-1 ${className}`}
+      aria-label="Play this message"
+    >
+      <SpeakerIcon className="h-4 w-4" />
+      Play
+    </button>
   );
 }
