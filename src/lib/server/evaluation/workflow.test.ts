@@ -14,6 +14,7 @@ import {
   dativeMistake,
 } from "@/test/mockEvaluator";
 import { createMockPublisher } from "@/test/mockPublisher";
+import { markRequiredObjectivesComplete } from "@/test/session-progress";
 import {
   immediateStep,
   markEvaluationFailed,
@@ -44,6 +45,7 @@ describe("evaluation workflow", () => {
 
   async function startedSession(
     sessions: ReturnType<typeof createSessionService>,
+    store: JsonFilePersistence,
     learnerId = createId(),
     scenarioId = "apartment_viewing",
   ) {
@@ -55,6 +57,7 @@ describe("evaluation workflow", () => {
       learnerId,
     });
     await sessions.addTurn(created.id, "Guten Tag, ich bin hier.");
+    await markRequiredObjectivesComplete(store, created.id);
     await sessions.completeSession(created.id);
     return created;
   }
@@ -62,7 +65,7 @@ describe("evaluation workflow", () => {
   it("loads the persisted session, calls the evaluator, and stores one evaluation", async () => {
     const evaluator = createMockEvaluator();
     const { store, sessions, events } = await setup(evaluator);
-    const created = await startedSession(sessions);
+    const created = await startedSession(sessions, store);
 
     const result = await runEvaluationWorkflow(created.id, {
       step: immediateStep,
@@ -93,7 +96,7 @@ describe("evaluation workflow", () => {
   it("does not evaluate or persist twice when an evaluation already exists", async () => {
     const evaluator = createMockEvaluator();
     const { store, sessions, events } = await setup(evaluator);
-    const created = await startedSession(sessions);
+    const created = await startedSession(sessions, store);
 
     await runEvaluationWorkflow(created.id, {
       step: immediateStep,
@@ -117,7 +120,7 @@ describe("evaluation workflow", () => {
   it("does not double-count the learner profile after a retried successful run", async () => {
     const evaluator = createTransientFailingEvaluator(1);
     const { store, sessions, events } = await setup();
-    const created = await startedSession(sessions);
+    const created = await startedSession(sessions, store);
 
     await expect(
       runEvaluationWorkflow(created.id, {
@@ -145,7 +148,7 @@ describe("evaluation workflow", () => {
 
   it("leaves a recoverable failed state when evaluation cannot succeed", async () => {
     const { store, sessions, events } = await setup();
-    const created = await startedSession(sessions);
+    const created = await startedSession(sessions, store);
     await expect(
       runEvaluationWorkflow(created.id, {
         step: immediateStep,
@@ -182,7 +185,7 @@ describe("evaluation workflow", () => {
     const { store, sessions, events } = await setup(evaluator);
     const learnerId = createId();
 
-    const first = await startedSession(sessions, learnerId, "apartment_viewing");
+    const first = await startedSession(sessions, store, learnerId, "apartment_viewing");
     const firstResult = await runEvaluationWorkflow(first.id, {
       step: immediateStep,
       store,
@@ -191,7 +194,7 @@ describe("evaluation workflow", () => {
     });
     expect(firstResult.evaluation?.evaluation.mistakes[0]?.recurring).toBe(false);
 
-    const second = await startedSession(sessions, learnerId, "restaurant");
+    const second = await startedSession(sessions, store, learnerId, "restaurant");
     const secondResult = await runEvaluationWorkflow(second.id, {
       step: immediateStep,
       store,
@@ -221,7 +224,7 @@ describe("evaluation workflow", () => {
       summary: "Dative needs review.",
     }));
     const { store, sessions, events } = await setup(evaluator);
-    const created = await startedSession(sessions);
+    const created = await startedSession(sessions, store);
 
     await runEvaluationWorkflow(created.id, {
       step: immediateStep,

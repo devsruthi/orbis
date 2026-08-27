@@ -8,6 +8,7 @@ import { ConversationError, createSessionService } from "./sessionService";
 import { createFailingClaude, createMockClaude } from "@/test/mockClaude";
 import { createMockPublisher, createFailingPublisher } from "@/test/mockPublisher";
 import { createDefaultLearner } from "./learner";
+import { markRequiredObjectivesComplete } from "@/test/session-progress";
 
 describe("session service", () => {
   let dir = "";
@@ -146,7 +147,7 @@ describe("session service", () => {
   });
 
   it("rejects turns on an unknown or completed session", async () => {
-    const { sessions } = await service();
+    const { sessions, store } = await service();
     await expect(sessions.addTurn(createId(), "Hallo")).rejects.toMatchObject({
       status: 404,
     });
@@ -156,6 +157,7 @@ describe("session service", () => {
       learnerId: createId(),
     });
     await sessions.addTurn(created.id, "Guten Tag, ich bin wegen der Wohnung hier.");
+    await markRequiredObjectivesComplete(store, created.id);
     await sessions.completeSession(created.id);
     await expect(sessions.addTurn(created.id, "Hallo")).rejects.toMatchObject({
       status: 409,
@@ -212,7 +214,7 @@ describe("session service", () => {
 
   it("publishes orbis/session.completed and returns processing without evaluating", async () => {
     const events = createMockPublisher();
-    const { sessions } = await service(undefined, events);
+    const { sessions, store } = await service(undefined, events);
     const created = await sessions.createSession({
       ...input,
       scenarioId: "city_registration",
@@ -220,6 +222,7 @@ describe("session service", () => {
     });
     expect(created.disclaimer).toBe("not_legal_advice");
     await sessions.addTurn(created.id, "Guten Tag, ich möchte mich anmelden.");
+    await markRequiredObjectivesComplete(store, created.id);
 
     const completed = await sessions.completeSession(created.id);
     expect(completed.session.status).toBe("processing");
@@ -231,12 +234,13 @@ describe("session service", () => {
 
   it("does not publish a duplicate event when complete is called twice", async () => {
     const events = createMockPublisher();
-    const { sessions } = await service(undefined, events);
+    const { sessions, store } = await service(undefined, events);
     const created = await sessions.createSession({
       ...input,
       learnerId: createId(),
     });
     await sessions.addTurn(created.id, "Guten Tag.");
+    await markRequiredObjectivesComplete(store, created.id);
     await sessions.completeSession(created.id);
     await sessions.completeSession(created.id);
     expect(events.published).toHaveLength(1);
@@ -251,9 +255,27 @@ describe("session service", () => {
     });
     await expect(sessions.completeSession(created.id)).rejects.toMatchObject({
       status: 400,
+      message: "Complete all mission points before ending the session.",
     });
     expect(events.published).toHaveLength(0);
     expect((await sessions.getSession(created.id)).status).toBe("active");
+  });
+
+  it("rejects completing before all required mission points are done", async () => {
+    const events = createMockPublisher();
+    const { sessions } = await service(undefined, events);
+    const created = await sessions.createSession({
+      ...input,
+      scenarioId: "bakery",
+      level: "A1",
+      learnerId: createId(),
+    });
+    await sessions.addTurn(created.id, "Guten Morgen.");
+    await expect(sessions.completeSession(created.id)).rejects.toMatchObject({
+      status: 400,
+      message: "Complete all mission points before ending the session.",
+    });
+    expect(events.published).toHaveLength(0);
   });
 
   it("leaves the session recoverable if event publishing fails", async () => {
@@ -268,6 +290,7 @@ describe("session service", () => {
       learnerId: createId(),
     });
     await sessions.addTurn(created.id, "Guten Tag.");
+    await markRequiredObjectivesComplete(persistence, created.id);
     await expect(sessions.completeSession(created.id)).rejects.toMatchObject({
       status: 503,
     });

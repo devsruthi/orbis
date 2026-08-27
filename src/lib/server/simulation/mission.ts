@@ -2,9 +2,11 @@ import type {
   Mission,
   ScenarioEvent,
   ScenarioVariant,
+  Session,
   SimulationState,
 } from "@/lib/shared/models";
 import { requiredObjectiveIds } from "./state";
+import { hydrateSimulation } from "./session";
 
 export function resolveMissionOutcome(
   state: SimulationState,
@@ -48,4 +50,30 @@ export function resolveMissionOutcome(
   }
 
   return state;
+}
+
+export function canCompleteSession(
+  session: Session,
+): { ok: true } | { ok: false; reason: string } {
+  if (!session.turns.some((turn) => turn.role === "user")) {
+    return {
+      ok: false,
+      reason: "Complete all mission points before ending the session.",
+    };
+  }
+
+  const simulation = hydrateSimulation(session);
+  const required = requiredObjectiveIds(session.mission, session.variant);
+  const allRequiredComplete = required.every((id) =>
+    simulation.objectives.some(
+      (objective) => objective.id === id && objective.status === "completed",
+    ),
+  );
+  if (!allRequiredComplete) {
+    return {
+      ok: false,
+      reason: "Complete all mission points before ending the session.",
+    };
+  }
+  return { ok: true };
 }

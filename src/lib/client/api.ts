@@ -76,6 +76,7 @@ export type PublicTurn = {
 export type PublicSession = {
   id: string;
   scenarioId: string;
+  worldId: string;
   scenarioTitle?: string;
   language: string;
   level: string;

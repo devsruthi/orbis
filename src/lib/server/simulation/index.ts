@@ -12,7 +12,7 @@ export {
   type ObjectiveSignal,
 } from "./objectives";
 export { allowedBranchChoices, applyBranchChoice } from "./branches";
-export { resolveMissionOutcome } from "./mission";
+export { resolveMissionOutcome, canCompleteSession } from "./mission";
 export { advanceSimulation } from "./advance";
 export {
   hydrateSimulation,

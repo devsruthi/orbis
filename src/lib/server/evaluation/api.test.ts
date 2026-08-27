@@ -14,6 +14,7 @@ import {
 import { createId } from "@/lib/shared/ids";
 import { createMockClaude } from "@/test/mockClaude";
 import { createMockPublisher } from "@/test/mockPublisher";
+import { markRequiredObjectivesComplete } from "@/test/session-progress";
 import { runEvaluationWorkflow, immediateStep } from "@/lib/server/evaluation";
 import { createMockEvaluator } from "@/test/mockEvaluator";
 
@@ -49,7 +50,7 @@ describe("evaluation API", () => {
   });
 
   it("completes a session by publishing an event without waiting for evaluation", async () => {
-    const { sessions, events } = await setup();
+    const { sessions, events, persistence } = await setup();
     const created = await sessions.createSession({
       worldId: "germany",
       scenarioId: "restaurant",
@@ -58,6 +59,7 @@ describe("evaluation API", () => {
       learnerId: createId(),
     });
     await sessions.addTurn(created.id, "Einen Tisch, bitte.");
+    await markRequiredObjectivesComplete(persistence, created.id);
 
     const response = await completeSession(new Request("http://orbis.test"), {
       params: Promise.resolve({ id: created.id }),
@@ -96,6 +98,7 @@ describe("evaluation API", () => {
     expect(missing.status).toBe(404);
 
     await sessions.addTurn(created.id, "Guten Tag.");
+    await markRequiredObjectivesComplete(persistence, created.id);
     await sessions.completeSession(created.id);
 
     const stillMissing = await getEvaluation(new Request("http://orbis.test"), {

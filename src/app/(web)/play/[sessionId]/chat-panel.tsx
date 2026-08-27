@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ApiError,
   NetworkError,
@@ -13,7 +14,10 @@ import {
 import { userFacingRequestError } from "@/lib/client/network";
 import { onAppResume } from "@/lib/client/platform";
 import { useVoiceConversation } from "@/lib/client/voice/use-voice-conversation";
+import { restartScenario, startErrorMessage } from "@/lib/client/start-session";
+import { playPath } from "@/lib/client/routes";
 import { languageOption } from "@/lib/shared/learning-options";
+import { isCefrLevel } from "@/lib/shared/cefr";
 import { GlobeIcon, HomeIcon, SendIcon, SpeakerIcon } from "../../ui/icons";
 import { LevelBadge, PRIMARY_BUTTON, SECONDARY_BUTTON } from "../../ui/page-header";
 import { EvaluationPanel } from "./evaluation-panel";
@@ -24,6 +28,7 @@ const POLL_MS = 2500;
 const MAX_POLLS = 36;
 
 export function ChatPanel({ sessionId }: { sessionId: string }) {
+  const router = useRouter();
   const [session, setSession] = useState<PublicSession | null>(null);
   const [evaluation, setEvaluation] = useState<PublicEvaluation | null>(null);
   const [message, setMessage] = useState("");
@@ -36,6 +41,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   const [voiceCheck, setVoiceCheck] = useState<PublicMessageCheck | null>(null);
   const [voiceChecking, setVoiceChecking] = useState(false);
   const [completing, setCompleting] = useState(false);
+  const [restarting, setRestarting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [timedOut, setTimedOut] = useState(false);
   const [pollNonce, setPollNonce] = useState(0);
@@ -262,8 +268,42 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
     }
   }
 
+  async function onRestart() {
+    if (!session || sending || completing || restarting) {
+      return;
+    }
+    if (!isCefrLevel(session.level)) {
+      return;
+    }
+    voice.cancelListening();
+    voice.stopSpeech();
+    setRestarting(true);
+    setError(null);
+    try {
+      const nextId = await restartScenario({
+        worldId: session.worldId,
+        scenarioId: session.scenarioId,
+        language: session.language,
+        level: session.level,
+      });
+      router.push(playPath(nextId));
+    } catch (caught) {
+      setError(startErrorMessage(caught));
+      setRestarting(false);
+    }
+  }
+
   async function onComplete() {
-    if (!session || sending || completing) {
+    if (!session || sending || completing || restarting) {
+      return;
+    }
+    const requiredObjectives =
+      session.simulation?.objectives.filter((item) => item.required) ?? [];
+    const objectivesComplete =
+      requiredObjectives.length > 0 &&
+      requiredObjectives.every((item) => item.status === "completed");
+    if (!objectivesComplete) {
+      setError("Complete all mission points before ending the session.");
       return;
     }
     voice.cancelListening();
@@ -313,7 +353,12 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
     session.scenarioTitle ||
     session.scenarioId;
   const listening = voice.state.status === "listening";
-  const composerBusy = sending || completing || checking;
+  const composerBusy = sending || completing || checking || restarting;
+  const requiredObjectives =
+    session.simulation?.objectives.filter((item) => item.required) ?? [];
+  const objectivesComplete =
+    requiredObjectives.length > 0 &&
+    requiredObjectives.every((item) => item.status === "completed");
 
   return (
     <main className="flex h-full min-h-0 w-full min-w-0 flex-col">
@@ -366,6 +411,16 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
               ].join(" ")}
             >
               English · {translationsOn ? "On" : "Off"}
+            </button>
+          ) : null}
+          {active ? (
+            <button
+              type="button"
+              onClick={() => void onRestart()}
+              disabled={composerBusy}
+              className={SECONDARY_BUTTON}
+            >
+              {restarting ? "Starting over…" : "Start over"}
             </button>
           ) : null}
         </div>
@@ -613,14 +668,18 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
 
           {error ? (
             <p className="mt-2 text-center text-sm text-red-600">{error}</p>
+          ) : !objectivesComplete ? (
+            <p className="mt-2 text-center text-sm text-stone-500">
+              Finish every point above before completing the session.
+            </p>
           ) : null}
 
           <div className="mt-2 flex justify-center">
             <button
               type="button"
               onClick={() => void onComplete()}
-              disabled={composerBusy}
-              className="text-sm text-stone-500 underline"
+              disabled={composerBusy || !objectivesComplete}
+              className="text-sm text-stone-500 underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
             >
               {completing ? "Starting…" : "Complete session"}
             </button>

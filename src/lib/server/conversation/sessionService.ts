@@ -26,6 +26,7 @@ import {
   hydrateSimulation,
   practiceConceptsFor,
   resolveMissionOutcome,
+  canCompleteSession,
   selectEventToTrigger,
   selectVariant,
   syncSessionFromSimulation,
@@ -363,11 +364,9 @@ export function createSessionService(
         );
       }
 
-      if (!session.turns.some((turn) => turn.role === "user")) {
-        throw new ConversationError(
-          400,
-          "Send at least one message before completing the session.",
-        );
+      const ready = canCompleteSession(session);
+      if (!ready.ok) {
+        throw new ConversationError(400, ready.reason);
       }
 
       const previousStatus = session.status;

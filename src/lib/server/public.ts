@@ -71,6 +71,7 @@ export function toPublicSession(session: Session) {
   return {
     id: session.id,
     scenarioId: session.scenarioId,
+    worldId: session.worldId,
     scenarioTitle,
     language: session.language,
     level: session.level,
