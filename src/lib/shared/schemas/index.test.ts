@@ -43,6 +43,9 @@ describe("Zod validation", () => {
     };
     expect(CreateSessionBodySchema.parse(body)).toEqual(body);
     expect(
+      CreateSessionBodySchema.parse({ ...body, restart: true }),
+    ).toEqual({ ...body, restart: true });
+    expect(
       CreateSessionBodySchema.safeParse({ ...body, level: "A3" }).success,
     ).toBe(false);
     expect(

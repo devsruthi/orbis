@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import {
@@ -61,6 +61,20 @@ export class JsonFilePersistence implements Persistence {
     const parsed = SessionSchema.parse(session);
     await this.writeJson(this.sessionPath(parsed.id), parsed);
     return parsed;
+  }
+
+  async deleteSession(id: string): Promise<void> {
+    if (!isRecordId(id)) {
+      return;
+    }
+    try {
+      await unlink(this.sessionPath(id));
+    } catch (error) {
+      if (isNotFound(error)) {
+        return;
+      }
+      throw error;
+    }
   }
 
   async listSessionsForLearner(learnerId: string): Promise<Session[]> {

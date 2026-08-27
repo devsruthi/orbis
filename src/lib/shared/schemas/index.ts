@@ -604,6 +604,7 @@ export const CreateSessionBodySchema = z
     language: LanguageCodeSchema,
     level: CefrLevelSchema,
     learnerId: UuidSchema,
+    restart: z.boolean().optional(),
   })
   .strict();
 
@@ -767,6 +768,7 @@ export const DashboardScenarioSchema = z.object({
   supportedConcepts: z.array(z.string()),
   attemptStatus: ScenarioAttemptStatusSchema,
   completedCount: z.number().int().nonnegative(),
+  activeSessionId: UuidSchema.optional(),
 });
 
 export const DashboardCategorySchema = z.object({

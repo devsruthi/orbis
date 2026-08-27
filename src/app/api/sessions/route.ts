@@ -13,7 +13,10 @@ export async function POST(request: Request) {
       return parsed.response;
     }
 
-    const session = await createSessionService().createSession(parsed.data);
+    const service = createSessionService();
+    const session = parsed.data.restart
+      ? await service.restartScenario(parsed.data)
+      : await service.createSession(parsed.data);
     return jsonOk({ session: toPublicSession(session) }, 201);
   } catch (error) {
     return handleRouteError(error);

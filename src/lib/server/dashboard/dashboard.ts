@@ -24,7 +24,7 @@ import {
   reviewCounts,
   upcomingReviews,
 } from "./reviews";
-import { scenarioAttemptStatus, scenarioLevel } from "./scenarios";
+import { scenarioAttemptStatus, scenarioLevel, activeSessionIdForScenario } from "./scenarios";
 import { averageScore, progressTrend } from "./stats";
 import { learningStreak } from "./streak";
 
@@ -261,6 +261,11 @@ function categoriesForWorld(
         now,
         worldId,
       );
+      const activeSessionId = activeSessionIdForScenario(
+        sessions,
+        scenario.id,
+        worldId,
+      );
       return {
         id: scenario.id,
         worldId: scenario.worldId,
@@ -275,6 +280,7 @@ function categoriesForWorld(
         supportedConcepts: scenario.supportedConcepts,
         attemptStatus: progress.status,
         completedCount: progress.completedCount,
+        ...(activeSessionId ? { activeSessionId } : {}),
         ...(scenario.summary?.en ? { summary: scenario.summary.en } : {}),
         ...(scenario.estimatedMinutes
           ? { estimatedMinutes: scenario.estimatedMinutes }

@@ -216,6 +216,26 @@ export function createSessionService(
       return store.createSession(session);
     },
 
+    async restartScenario(input: CreateSessionBody): Promise<Session> {
+      const existing = await store.listSessionsForLearner(input.learnerId);
+      for (const session of existing) {
+        if (
+          session.scenarioId === input.scenarioId &&
+          session.worldId === input.worldId &&
+          session.status === "active"
+        ) {
+          await store.deleteSession(session.id);
+        }
+      }
+      return this.createSession({
+        worldId: input.worldId,
+        scenarioId: input.scenarioId,
+        language: input.language,
+        level: input.level,
+        learnerId: input.learnerId,
+      });
+    },
+
     async getSession(id: string): Promise<Session> {
       const session = await store.getSession(id);
       if (!session) {

@@ -36,6 +36,33 @@ export function scenarioAttemptStatus(
   return { status: "completed", completedCount };
 }
 
+export function activeSessionIdForScenario(
+  sessions: Session[],
+  scenarioId: string,
+  worldId?: string,
+): string | undefined {
+  const resumable = sessions.filter(
+    (session) =>
+      session.scenarioId === scenarioId &&
+      (worldId ? session.worldId === worldId : true) &&
+      session.status === "active",
+  );
+  const latest = resumable
+    .slice()
+    .sort((a, b) => {
+      const turnDelta = b.turns.length - a.turns.length;
+      if (turnDelta !== 0) {
+        return turnDelta;
+      }
+      return lastActivity(b).localeCompare(lastActivity(a));
+    })[0];
+  return latest?.id;
+}
+
+function lastActivity(session: Session): string {
+  return session.turns.at(-1)?.createdAt ?? session.createdAt;
+}
+
 export function scenarioLevel(scenario: Scenario): Scenario["supportedLevels"][number] {
   return scenario.supportedLevels.includes("A1")
     ? "A1"

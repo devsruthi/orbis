@@ -86,6 +86,11 @@ describe("JSON persistence", () => {
     });
     const listed = await persistence.listSessionsForLearner(learner.id);
     expect(listed.map((session) => session.id)).toEqual([created.id]);
+
+    await persistence.deleteSession(created.id);
+    expect(await persistence.getSession(created.id)).toBeNull();
+    expect(await persistence.listSessionsForLearner(learner.id)).toEqual([]);
+    await expect(persistence.deleteSession(created.id)).resolves.toBeUndefined();
   });
 
   it("stores evaluations separately and lists them by session and learner", async () => {

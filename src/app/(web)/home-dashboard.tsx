@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useLearnerDashboard } from "@/lib/client/use-dashboard";
-import { startErrorMessage, startScenario } from "@/lib/client/start-session";
+import { startErrorMessage, openScenario } from "@/lib/client/start-session";
 import { playPath } from "@/lib/client/routes";
 import {
   accuracyPercent,
@@ -69,11 +69,19 @@ export function HomeDashboard() {
     setStarting(`${rec.language}:${rec.scenarioId}`);
     setStartError(null);
     try {
-      const sessionId = await startScenario({
+      const activeSessionId = paths
+        .find(
+          (path) =>
+            path.language === rec.language && path.worldId === rec.worldId,
+        )
+        ?.categories.flatMap((category) => category.scenarios)
+        .find((scenario) => scenario.id === rec.scenarioId)?.activeSessionId;
+      const sessionId = await openScenario({
         worldId: rec.worldId,
         scenarioId: rec.scenarioId,
         language: rec.language,
         level: rec.level,
+        activeSessionId,
       });
       router.push(playPath(sessionId));
     } catch (caught) {

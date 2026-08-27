@@ -19,6 +19,36 @@ export async function startScenario(input: {
   return session.id;
 }
 
+export async function openScenario(input: {
+  worldId: string;
+  scenarioId: string;
+  language: string;
+  level: CefrLevel;
+  activeSessionId?: string;
+}): Promise<string> {
+  if (input.activeSessionId) {
+    return input.activeSessionId;
+  }
+  return startScenario(input);
+}
+
+export async function restartScenario(input: {
+  worldId: string;
+  scenarioId: string;
+  language: string;
+  level: CefrLevel;
+}): Promise<string> {
+  const { session } = await orbisApi.createSession({
+    worldId: input.worldId,
+    scenarioId: input.scenarioId,
+    language: input.language,
+    level: input.level,
+    learnerId: getOrCreateLearnerId(),
+    restart: true,
+  });
+  return session.id;
+}
+
 export function startErrorMessage(caught: unknown): string {
   if (caught instanceof ApiError || caught instanceof NetworkError) {
     return caught.message;

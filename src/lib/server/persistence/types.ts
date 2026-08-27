@@ -13,6 +13,7 @@ export interface Persistence {
   createSession(session: Session): Promise<Session>;
   getSession(id: string): Promise<Session | null>;
   saveSession(session: Session): Promise<Session>;
+  deleteSession(id: string): Promise<void>;
   listSessionsForLearner(learnerId: string): Promise<Session[]>;
   createEvaluation(record: EvaluationRecord): Promise<EvaluationRecord>;
   getEvaluation(id: string): Promise<EvaluationRecord | null>;

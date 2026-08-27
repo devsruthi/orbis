@@ -14,7 +14,7 @@ import { getLearnerDashboard } from "./dashboard";
 import { learningStreak } from "./streak";
 import { averageScore, progressTrend } from "./stats";
 import { orderedWeaknesses, reviewCounts } from "./reviews";
-import { scenarioAttemptStatus } from "./scenarios";
+import { scenarioAttemptStatus, activeSessionIdForScenario } from "./scenarios";
 
 const NOW = "2026-03-10T12:00:00.000Z";
 
@@ -175,6 +175,7 @@ describe("dashboard aggregation", () => {
       .find((scenario) => scenario.id === "apartment_viewing");
     expect(apartment?.attemptStatus).toBe("recently_completed");
     expect(apartment?.completedCount).toBe(1);
+    expect(apartment?.activeSessionId).toBeUndefined();
     expect(dashboard.achievements.find((item) => item.id === "first_scenario")?.unlocked).toBe(
       true,
     );
@@ -246,6 +247,49 @@ describe("dashboard aggregation", () => {
     expect(dashboard.recommendations.map((item) => item.language).sort()).toEqual(
       ["de", "fr"],
     );
+  });
+
+  it("exposes the latest active session so an attempted mission can be resumed", async () => {
+    const { store, learner } = await setup();
+    const older = await store.createSession(
+      makeSession(learner.id, {
+        scenarioId: "bakery",
+        status: "active",
+        completedAt: undefined,
+        overallScore: undefined,
+        createdAt: "2026-03-09T10:00:00.000Z",
+      }),
+    );
+    const latest = await store.createSession(
+      makeSession(learner.id, {
+        scenarioId: "bakery",
+        status: "active",
+        completedAt: undefined,
+        overallScore: undefined,
+        createdAt: "2026-03-10T10:00:00.000Z",
+      }),
+    );
+    await store.createSession(
+      makeSession(learner.id, {
+        scenarioId: "restaurant",
+        completedAt: "2026-03-10T10:00:00.000Z",
+        overallScore: 80,
+      }),
+    );
+
+    const dashboard = await getLearnerDashboard(learner.id, store, NOW);
+    const bakery = dashboard.paths[0]?.categories
+      .flatMap((category) => category.scenarios)
+      .find((scenario) => scenario.id === "bakery");
+    const restaurant = dashboard.paths[0]?.categories
+      .flatMap((category) => category.scenarios)
+      .find((scenario) => scenario.id === "restaurant");
+
+    expect(bakery?.attemptStatus).toBe("attempted");
+    expect(bakery?.activeSessionId).toBe(latest.id);
+    expect(bakery?.activeSessionId).not.toBe(older.id);
+    expect(restaurant?.attemptStatus).toBe("recently_completed");
+    expect(restaurant?.activeSessionId).toBeUndefined();
   });
 });
 
@@ -369,6 +413,50 @@ describe("dashboard calculations", () => {
     expect(scenarioAttemptStatus(sessions, "city_registration", NOW).status).toBe(
       "completed",
     );
+    expect(activeSessionIdForScenario(sessions, "restaurant")).toBe(
+      sessions[0]?.id,
+    );
+    expect(activeSessionIdForScenario(sessions, "apartment_viewing")).toBeUndefined();
+    expect(
+      activeSessionIdForScenario(sessions, "restaurant", "france"),
+    ).toBeUndefined();
+  });
+
+  it("resumes the active session with the most conversation history", () => {
+    const learnerId = createId();
+    const newerEmpty = makeSession(learnerId, {
+      scenarioId: "bakery",
+      status: "active",
+      completedAt: undefined,
+      overallScore: undefined,
+      createdAt: "2026-03-10T12:00:00.000Z",
+    });
+    const olderWithHistory = makeSession(learnerId, {
+      scenarioId: "bakery",
+      status: "active",
+      completedAt: undefined,
+      overallScore: undefined,
+      createdAt: "2026-03-09T12:00:00.000Z",
+    });
+    olderWithHistory.turns = [
+      {
+        id: createId(),
+        role: "character",
+        text: "Guten Morgen!",
+        inputType: "text",
+        createdAt: "2026-03-09T12:00:01.000Z",
+      },
+      {
+        id: createId(),
+        role: "user",
+        text: "Ein Brötchen bitte.",
+        inputType: "text",
+        createdAt: "2026-03-09T12:00:02.000Z",
+      },
+    ];
+    expect(
+      activeSessionIdForScenario([newerEmpty, olderWithHistory], "bakery"),
+    ).toBe(olderWithHistory.id);
   });
 });
 
@@ -382,6 +470,7 @@ function makeSession(
     worldId?: Session["worldId"];
     language?: Session["language"];
     level?: Session["level"];
+    createdAt?: string;
   },
 ): Session {
   const completedAt = overrides.completedAt;
@@ -415,7 +504,7 @@ function makeSession(
     pendingEventIds: [],
     firedEventIds: [],
     missionProgress: [],
-    createdAt: completedAt ?? NOW,
+    createdAt: overrides.createdAt ?? completedAt ?? NOW,
     ...(completedAt ? { completedAt } : {}),
     ...(overallScore === undefined
       ? {}

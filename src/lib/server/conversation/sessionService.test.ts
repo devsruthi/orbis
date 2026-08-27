@@ -409,6 +409,40 @@ describe("session service", () => {
     expect(second.mission.title).toEqual(first.mission.title);
   });
 
+  it("restarts a scenario by deleting the active chat and opening a new one", async () => {
+    const claude = createMockClaude([
+      "Guten Morgen, was darf es sein?",
+      "Willkommen zurück in der Bäckerei.",
+    ]);
+    const { sessions, store } = await service(claude);
+    const learnerId = createId();
+    const first = await sessions.createSession({
+      worldId: "germany",
+      scenarioId: "bakery",
+      language: "de",
+      level: "A1",
+      learnerId,
+    });
+    await sessions.addTurn(first.id, "Ein Brötchen bitte.");
+    expect((await store.getSession(first.id))?.turns.length).toBeGreaterThan(1);
+
+    const restarted = await sessions.restartScenario({
+      worldId: "germany",
+      scenarioId: "bakery",
+      language: "de",
+      level: "A1",
+      learnerId,
+    });
+
+    expect(restarted.id).not.toBe(first.id);
+    expect(await store.getSession(first.id)).toBeNull();
+    expect(restarted.turns).toHaveLength(1);
+    expect(restarted.turns[0]?.role).toBe("character");
+    expect(restarted.turns[0]?.text).toContain("Willkommen");
+    const remaining = await store.listSessionsForLearner(learnerId);
+    expect(remaining.map((session) => session.id)).toEqual([restarted.id]);
+  });
+
   it("rejects further turns after a genuine mission failure", async () => {
     const claude = createMockClaude(["Guten Tag.", "Das verstehe ich."], {
       branchChoice: "decline",
