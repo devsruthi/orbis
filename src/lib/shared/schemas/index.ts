@@ -613,6 +613,32 @@ export const TurnBodySchema = z
   })
   .strict();
 
+export const MessageCheckIssueCategorySchema = z.enum([
+  "spelling",
+  "grammar",
+  "word_order",
+  "vocabulary",
+]);
+
+export const MessageCheckIssueSchema = z.object({
+  category: MessageCheckIssueCategorySchema,
+  original: z.string().min(1),
+  correction: z.string().min(1),
+  explanation: z.string().min(1),
+});
+
+export const MessageCheckResultSchema = z.object({
+  ok: z.boolean(),
+  corrected: z.string().min(1),
+  issues: z.array(MessageCheckIssueSchema),
+});
+
+export const MessageCheckBodySchema = z
+  .object({
+    message: z.string().trim().min(1).max(4000),
+  })
+  .strict();
+
 export const ScenarioQuerySchema = z.object({
   language: LanguageCodeSchema.optional(),
   level: CefrLevelSchema.optional(),

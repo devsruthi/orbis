@@ -1,0 +1,76 @@
+import { describe, expect, it, vi } from "vitest";
+import { ClaudeError } from "@/lib/server/claude/errors";
+import {
+  createMessageChecker,
+  parseMessageCheckResult,
+} from "./checker";
+
+describe("message checker (mocked Claude)", () => {
+  it("sends the message_check tool and returns spelling issues", async () => {
+    const complete = vi.fn(async ({ system, messages, tool }) => {
+      expect(tool.name).toBe("message_check");
+      expect(system).toContain("pre-send language checker");
+      expect(system).toContain("German");
+      expect(messages[0]?.content).toContain("enshuldigung");
+      return {
+        ok: false,
+        corrected: "Entschuldigung",
+        issues: [
+          {
+            category: "spelling",
+            original: "enshuldigung",
+            correction: "Entschuldigung",
+            explanation:
+              "This is a misspelling of Entschuldigung (excuse me / sorry).",
+          },
+        ],
+      };
+    });
+
+    const checker = createMessageChecker(complete);
+    const output = await checker.check({
+      message: "enshuldigung",
+      languageCode: "de",
+      languageName: "German",
+      level: "A1",
+    });
+    expect(output.ok).toBe(false);
+    expect(output.corrected).toBe("Entschuldigung");
+    expect(output.issues[0]?.category).toBe("spelling");
+    expect(complete).toHaveBeenCalledOnce();
+  });
+
+  it("treats an empty issue list as ok even if the model says otherwise", async () => {
+    const checker = createMessageChecker(async () => ({
+      ok: false,
+      corrected: "Guten Tag",
+      issues: [],
+    }));
+    const output = await checker.check({
+      message: "Guten Tag",
+      languageCode: "de",
+      languageName: "German",
+      level: "A1",
+    });
+    expect(output.ok).toBe(true);
+    expect(output.issues).toEqual([]);
+  });
+
+  it("rejects invalid Claude output without exposing internals", async () => {
+    const checker = createMessageChecker(async () => ({ ok: "maybe" }));
+    await expect(
+      checker.check({
+        message: "Hallo",
+        languageCode: "de",
+        languageName: "German",
+        level: "A1",
+      }),
+    ).rejects.toMatchObject({
+      status: 502,
+      type: "invalid_output",
+    });
+    expect(() => parseMessageCheckResult({ issues: "none" })).toThrow(
+      ClaudeError,
+    );
+  });
+});

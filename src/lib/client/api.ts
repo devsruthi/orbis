@@ -103,6 +103,17 @@ export type PublicSession = {
   followUp?: string[];
 };
 
+export type PublicMessageCheck = {
+  ok: boolean;
+  corrected: string;
+  issues: {
+    category: "spelling" | "grammar" | "word_order" | "vocabulary";
+    original: string;
+    correction: string;
+    explanation: string;
+  }[];
+};
+
 export type PublicEvaluation = {
   id: string;
   sessionId: string;
@@ -165,6 +176,11 @@ export const orbisApi = {
     }>(`/api/sessions/${sessionId}/turns`, {
       method: "POST",
       body: JSON.stringify({ message, inputMode }),
+    }),
+  checkMessage: (sessionId: string, message: string) =>
+    request<PublicMessageCheck>(`/api/sessions/${sessionId}/check-message`, {
+      method: "POST",
+      body: JSON.stringify({ message }),
     }),
   completeSession: (sessionId: string) =>
     request<{

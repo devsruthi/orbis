@@ -45,6 +45,9 @@ import type {
   SkillLevelSchema,
   BranchRuleSchema,
   TurnBodySchema,
+  MessageCheckBodySchema,
+  MessageCheckIssueSchema,
+  MessageCheckResultSchema,
   TurnSchema,
   VocabularyHintSchema,
   WorldEventSchema,
@@ -109,3 +112,6 @@ export type Session = z.infer<typeof SessionSchema>;
 export type SessionStatus = z.infer<typeof SessionStatusSchema>;
 export type CreateSessionBody = z.infer<typeof CreateSessionBodySchema>;
 export type TurnBody = z.infer<typeof TurnBodySchema>;
+export type MessageCheckBody = z.infer<typeof MessageCheckBodySchema>;
+export type MessageCheckIssue = z.infer<typeof MessageCheckIssueSchema>;
+export type MessageCheckResult = z.infer<typeof MessageCheckResultSchema>;

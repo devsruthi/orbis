@@ -7,6 +7,7 @@ import {
   NetworkError,
   orbisApi,
   type PublicEvaluation,
+  type PublicMessageCheck,
   type PublicSession,
 } from "@/lib/client/api";
 import { userFacingRequestError } from "@/lib/client/network";
@@ -16,6 +17,7 @@ import { languageOption } from "@/lib/shared/learning-options";
 import { GlobeIcon, HomeIcon, SpeakerIcon } from "../../ui/icons";
 import { LevelBadge, PRIMARY_BUTTON, SECONDARY_BUTTON } from "../../ui/page-header";
 import { EvaluationPanel } from "./evaluation-panel";
+import { MessageCheckCard } from "./message-check-card";
 import { VoicePanel } from "./voice-panel";
 
 const POLL_MS = 2500;
@@ -27,6 +29,10 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [messageCheck, setMessageCheck] = useState<PublicMessageCheck | null>(
+    null,
+  );
   const [completing, setCompleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [timedOut, setTimedOut] = useState(false);
@@ -159,19 +165,15 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
     };
   }, [session?.status, sessionId, evaluation, pollNonce]);
 
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    if (!session || sending || completing) {
-      return;
-    }
-    const text = message.trim();
-    if (!text) {
+  async function deliverTurn(text: string) {
+    if (!session) {
       return;
     }
     voice.cancelListening();
     voice.stopSpeech();
     setSending(true);
     setError(null);
+    setMessageCheck(null);
     try {
       const result = await orbisApi.sendTurn(session.id, text, "text");
       setSession(result.session);
@@ -184,6 +186,33 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
       );
     } finally {
       setSending(false);
+    }
+  }
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (!session || sending || completing || checking) {
+      return;
+    }
+    const text = message.trim();
+    if (!text) {
+      return;
+    }
+    voice.cancelListening();
+    voice.stopSpeech();
+    setChecking(true);
+    setError(null);
+    try {
+      const result = await orbisApi.checkMessage(session.id, text);
+      if (result.ok || result.issues.length === 0) {
+        await deliverTurn(text);
+        return;
+      }
+      setMessageCheck(result);
+    } catch {
+      await deliverTurn(text);
+    } finally {
+      setChecking(false);
     }
   }
 
@@ -442,23 +471,50 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
               <textarea
                 id="orbis-message"
                 value={message}
-                onChange={(event) => setMessage(event.target.value)}
+                onChange={(event) => {
+                  setMessage(event.target.value);
+                  if (messageCheck) {
+                    setMessageCheck(null);
+                  }
+                }}
                 rows={3}
                 maxLength={4000}
                 placeholder="Write in the target language…"
                 className="min-h-[5.5rem] w-full rounded-2xl border border-stone-300 bg-white/80 p-3 dark:border-zinc-700 dark:bg-zinc-950"
-                disabled={sending || completing}
+                disabled={sending || completing || checking}
               />
-              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                <button
-                  type="submit"
-                  disabled={sending || completing}
-                  className={`${PRIMARY_BUTTON} w-full sm:w-auto`}
-                >
-                  {sending ? "Sending…" : "Send"}
-                </button>
-                {error ? <p className="text-sm text-red-600">{error}</p> : null}
-              </div>
+              {messageCheck && messageCheck.issues.length > 0 ? (
+                <>
+                  <MessageCheckCard
+                    original={message.trim()}
+                    result={messageCheck}
+                    disabled={sending || completing}
+                    onSendOriginal={() => void deliverTurn(message.trim())}
+                    onSendCorrection={() =>
+                      void deliverTurn(messageCheck.corrected)
+                    }
+                    onEdit={() => setMessageCheck(null)}
+                  />
+                  {error ? (
+                    <p className="text-sm text-red-600">{error}</p>
+                  ) : null}
+                </>
+              ) : (
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                  <button
+                    type="submit"
+                    disabled={sending || completing || checking}
+                    className={`${PRIMARY_BUTTON} w-full sm:w-auto`}
+                  >
+                    {checking
+                      ? "Checking…"
+                      : sending
+                        ? "Sending…"
+                        : "Send"}
+                  </button>
+                  {error ? <p className="text-sm text-red-600">{error}</p> : null}
+                </div>
+              )}
             </form>
           )}
 

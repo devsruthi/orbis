@@ -9,6 +9,8 @@ import {
   ScenarioIdSchema,
   ScoreSchema,
   TurnBodySchema,
+  MessageCheckBodySchema,
+  MessageCheckResultSchema,
   UuidSchema,
 } from "./index";
 
@@ -62,6 +64,9 @@ describe("Zod validation", () => {
     expect(TurnBodySchema.parse({ message: "Guten Tag" })).toEqual({
       message: "Guten Tag",
     });
+    expect(TurnBodySchema.parse({ message: "Guten Tag" })).toEqual({
+      message: "Guten Tag",
+    });
     expect(
       TurnBodySchema.parse({
         message: "Ich möchte die Wohnung sehen.",
@@ -88,6 +93,35 @@ describe("Zod validation", () => {
         level: "A2",
         learnerId: "11111111-1111-4111-8111-111111111111",
         simulation: { missionStatus: "successful" },
+      }).success,
+    ).toBe(false);
+  });
+
+  it("validates a pre-send message check result", () => {
+    expect(MessageCheckBodySchema.parse({ message: "enshuldigung" })).toEqual({
+      message: "enshuldigung",
+    });
+    expect(MessageCheckBodySchema.safeParse({ message: "   " }).success).toBe(
+      false,
+    );
+    const result = MessageCheckResultSchema.parse({
+      ok: false,
+      corrected: "Entschuldigung",
+      issues: [
+        {
+          category: "spelling",
+          original: "enshuldigung",
+          correction: "Entschuldigung",
+          explanation: "Misspelling of Entschuldigung.",
+        },
+      ],
+    });
+    expect(result.issues[0]?.category).toBe("spelling");
+    expect(
+      MessageCheckResultSchema.safeParse({
+        ok: true,
+        corrected: "Hallo",
+        issues: [{ category: "typo" }],
       }).success,
     ).toBe(false);
   });
