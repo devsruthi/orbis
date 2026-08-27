@@ -621,103 +621,120 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
       </div>
 
       {active ? (
-        <div className="shrink-0 border-t border-stone-200/80 bg-[#f6f3ec]/95 pt-3 dark:border-zinc-800 dark:bg-[#16130f]/95 pb-[max(0.75rem,env(safe-area-inset-bottom),var(--keyboard-inset,0px))]">
-          <VoiceDock
-            state={voice.state}
-            capabilities={voice.capabilities}
-            errorMessage={voice.errorMessage}
-            disabled={composerBusy}
-            onSendTranscript={(text) => void voice.sendTranscript(text)}
-            onEditTranscript={voice.editTranscript}
-            onTryAgain={() => void voice.tryAgain()}
-            onDiscard={voice.discardTranscript}
-            onPause={voice.pause}
-            onResume={voice.resume}
-            onStopSpeech={voice.stopSpeech}
-            onReplay={voice.replay}
-            onSetSpeed={voice.setSpeed}
-            check={voiceCheck}
-            checking={voiceChecking}
-          />
+        <div className="shrink-0 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom),var(--keyboard-inset,0px))]">
+          <div className="rounded-[1.75rem] border border-stone-200/80 bg-white/80 p-3 shadow-[0_18px_40px_-24px_rgba(42,36,28,0.55)] backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/85">
+            <VoiceDock
+              state={voice.state}
+              capabilities={voice.capabilities}
+              errorMessage={voice.errorMessage}
+              disabled={composerBusy}
+              onSendTranscript={(text) => void voice.sendTranscript(text)}
+              onEditTranscript={voice.editTranscript}
+              onTryAgain={() => void voice.tryAgain()}
+              onDiscard={voice.discardTranscript}
+              onPause={voice.pause}
+              onResume={voice.resume}
+              onStopSpeech={voice.stopSpeech}
+              onReplay={voice.replay}
+              onSetSpeed={voice.setSpeed}
+              check={voiceCheck}
+              checking={voiceChecking}
+            />
 
-          {messageCheck && messageCheck.issues.length > 0 ? (
-            <div className="mt-3">
-              <MessageCheckCard
-                original={message.trim()}
-                result={messageCheck}
-                disabled={composerBusy}
-                onSendOriginal={() => void deliverTurn(message.trim())}
-                onSendCorrection={() => void deliverTurn(messageCheck.corrected)}
-                onEdit={() => setMessageCheck(null)}
-              />
-            </div>
-          ) : null}
+            {messageCheck && messageCheck.issues.length > 0 ? (
+              <div className="mt-3">
+                <MessageCheckCard
+                  original={message.trim()}
+                  result={messageCheck}
+                  disabled={composerBusy}
+                  onSendOriginal={() => void deliverTurn(message.trim())}
+                  onSendCorrection={() => void deliverTurn(messageCheck.corrected)}
+                  onEdit={() => setMessageCheck(null)}
+                />
+              </div>
+            ) : null}
 
-          <form onSubmit={onSubmit} className="mt-3 flex items-end gap-2">
-            <div className="relative min-w-0 flex-1">
-              <label htmlFor="orbis-message" className="sr-only">
-                Your message
-              </label>
-              <input
-                id="orbis-message"
-                ref={composerInput}
-                value={
+            <form onSubmit={onSubmit} className="mt-2.5 flex items-center gap-2">
+              <div
+                className={[
+                  "flex min-w-0 flex-1 items-center rounded-full border bg-white pl-4 pr-1.5 shadow-sm transition dark:bg-zinc-950",
                   listening
-                    ? voice.state.interimTranscript
-                    : message
-                }
-                onChange={(event) => {
-                  setMessage(event.target.value);
-                  if (messageCheck) {
-                    setMessageCheck(null);
-                  }
-                }}
-                onKeyDown={onComposerKeyDown}
-                enterKeyHint="send"
-                maxLength={4000}
-                placeholder={`Type your message in ${languageName}…`}
-                className="h-12 w-full rounded-full border border-stone-300 bg-white py-2 pl-4 pr-12 text-sm dark:border-zinc-700 dark:bg-zinc-950"
-                disabled={composerBusy || listening}
-                autoComplete="off"
-              />
-              <button
-                type="submit"
-                disabled={composerBusy || listening || !message.trim()}
-                className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 disabled:opacity-40 dark:hover:bg-zinc-800"
-                aria-label={
-                  checking ? "Checking message" : sending ? "Sending" : "Send"
-                }
+                    ? "border-emerald-400 ring-2 ring-emerald-400/20"
+                    : "border-stone-200 focus-within:border-orbis-gold focus-within:ring-2 focus-within:ring-orbis-gold/25 dark:border-zinc-700",
+                ].join(" ")}
               >
-                <SendIcon className="h-4 w-4" />
+                <label htmlFor="orbis-message" className="sr-only">
+                  Your message
+                </label>
+                <input
+                  id="orbis-message"
+                  ref={composerInput}
+                  value={
+                    listening
+                      ? voice.state.interimTranscript
+                      : message
+                  }
+                  onChange={(event) => {
+                    setMessage(event.target.value);
+                    if (messageCheck) {
+                      setMessageCheck(null);
+                    }
+                  }}
+                  onKeyDown={onComposerKeyDown}
+                  enterKeyHint="send"
+                  maxLength={4000}
+                  placeholder={`Type your message in ${languageName}…`}
+                  className="h-12 min-w-0 flex-1 appearance-none border-0 bg-transparent text-sm outline-none ring-0 placeholder:text-stone-400 focus:outline-none focus:ring-0 disabled:opacity-60"
+                  disabled={composerBusy || listening}
+                  autoComplete="off"
+                />
+                <button
+                  type="submit"
+                  disabled={composerBusy || listening || !message.trim()}
+                  className={[
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition",
+                    message.trim() && !composerBusy && !listening
+                      ? "bg-orbis-gold text-white shadow-sm hover:bg-orbis-gold-deep"
+                      : "text-stone-400 hover:bg-stone-100 disabled:hover:bg-transparent dark:hover:bg-zinc-800",
+                  ].join(" ")}
+                  aria-label={
+                    checking ? "Checking message" : sending ? "Sending" : "Send"
+                  }
+                >
+                  <SendIcon className="h-4 w-4" />
+                </button>
+              </div>
+              {voice.capabilities.speechToText ? (
+                <ComposerMicButton
+                  state={voice.state}
+                  disabled={composerBusy}
+                  onStart={() => void voice.startListening()}
+                  onStop={voice.stopListening}
+                />
+              ) : null}
+            </form>
+
+            <div className="mt-2.5 flex items-center justify-between gap-3 px-1">
+              {error ? (
+                <p className="min-w-0 text-xs text-red-600">{error}</p>
+              ) : !objectivesComplete ? (
+                <p className="min-w-0 text-xs text-stone-500">
+                  Finish every point above before completing the session.
+                </p>
+              ) : (
+                <p className="min-w-0 text-xs text-stone-500">
+                  All points done — you can complete the session.
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => void onComplete()}
+                disabled={composerBusy || !objectivesComplete}
+                className="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                {completing ? "Starting…" : "Complete session"}
               </button>
             </div>
-            {voice.capabilities.speechToText ? (
-              <ComposerMicButton
-                state={voice.state}
-                disabled={composerBusy}
-                onStart={() => void voice.startListening()}
-                onStop={voice.stopListening}
-              />
-            ) : null}
-          </form>
-
-          {error ? (
-            <p className="mt-2 text-center text-sm text-red-600">{error}</p>
-          ) : !objectivesComplete ? (
-            <p className="mt-2 text-center text-sm text-stone-500">
-              Finish every point above before completing the session.
-            </p>
-          ) : null}
-
-          <div className="mt-2 flex justify-center">
-            <button
-              type="button"
-              onClick={() => void onComplete()}
-              disabled={composerBusy || !objectivesComplete}
-              className="text-sm text-stone-500 underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
-            >
-              {completing ? "Starting…" : "Complete session"}
-            </button>
           </div>
         </div>
       ) : null}

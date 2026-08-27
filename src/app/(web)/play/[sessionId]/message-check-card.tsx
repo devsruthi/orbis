@@ -24,7 +24,7 @@ export function MessageCheckIssues({
       {issues.map((issue, index) => (
         <li
           key={`${issue.category}-${index}`}
-          className="rounded-2xl bg-[#efe6d6] p-3 text-sm dark:bg-zinc-800"
+          className="rounded-2xl bg-white p-3 text-sm shadow-sm dark:bg-zinc-900"
         >
           <p className="mb-1 text-xs uppercase tracking-wide text-stone-500">
             {CATEGORY_LABEL[issue.category]}
@@ -52,7 +52,7 @@ export function MessageCheckCard(props: {
   onEdit: () => void;
 }) {
   return (
-    <div className="orbis-card flex flex-col gap-3 p-4">
+    <div className="flex flex-col gap-3 rounded-2xl bg-[#f4efe6] p-4 dark:bg-zinc-800/70">
       <p className="text-sm font-medium text-stone-500">Before you send</p>
       <p className="font-serif text-lg leading-relaxed">“{props.original}”</p>
       <MessageCheckIssues issues={props.result.issues} />

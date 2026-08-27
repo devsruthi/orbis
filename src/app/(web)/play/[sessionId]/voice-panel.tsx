@@ -87,13 +87,13 @@ export function VoiceDock(props: {
   const listening = state.status === "listening";
 
   return (
-    <section aria-label="Voice conversation" className="flex flex-col gap-3">
+    <section aria-label="Voice conversation" className="flex flex-col gap-2.5">
       {sttOff ? (
-        <p className="text-center text-sm text-stone-500">
+        <p className="text-center text-xs text-stone-500">
           {VOICE_UNAVAILABLE_MESSAGE} You can still type.
         </p>
       ) : listening || state.interimTranscript ? (
-        <p className="flex items-center justify-center gap-2 text-sm text-stone-500">
+        <p className="flex items-center justify-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-sm text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
           <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
           {listening
             ? "Listening… Tap the mic when you are done."
@@ -102,27 +102,32 @@ export function VoiceDock(props: {
       ) : null}
 
       {state.interimTranscript ? (
-        <p className="text-center text-sm text-stone-500" aria-live="polite">
+        <p
+          className="px-1 text-center text-sm italic text-stone-600 dark:text-zinc-300"
+          aria-live="polite"
+        >
           {state.interimTranscript}
         </p>
       ) : null}
 
       {ttsOff ? (
-        <p className="text-center text-sm text-stone-500">
+        <p className="text-center text-xs text-stone-500">
           Spoken replies are not available. The text still appears above.
         </p>
       ) : (
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <ControlChip
-            onClick={props.onReplay}
-            disabled={props.disabled || !state.lastSpokenText}
-            icon={<ReplayIcon className="h-4 w-4" />}
-            label="Replay"
-          />
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
+          {state.lastSpokenText ? (
+            <ControlChip
+              onClick={props.onReplay}
+              disabled={props.disabled}
+              icon={<ReplayIcon className="h-3.5 w-3.5" />}
+              label="Replay"
+            />
+          ) : null}
           {state.status === "speaking" ? (
             <ControlChip
               onClick={props.onPause}
-              icon={<PauseIcon className="h-4 w-4" />}
+              icon={<PauseIcon className="h-3.5 w-3.5" />}
               label="Pause"
             />
           ) : null}
@@ -143,7 +148,7 @@ export function VoiceDock(props: {
                   props.onSetSpeed(next.id);
                 }
               }}
-              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              className="inline-flex h-8 cursor-pointer items-center rounded-full border border-stone-200/90 bg-white px-3 text-xs text-stone-600 hover:border-stone-300 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
               Speed · {speedLabel}
             </button>
@@ -152,7 +157,7 @@ export function VoiceDock(props: {
       )}
 
       {state.status === "reviewing" ? (
-        <div className="orbis-card flex flex-col gap-3 p-4">
+        <div className="flex flex-col gap-3 rounded-2xl bg-[#f4efe6] p-4 dark:bg-zinc-800/70">
           <p className="text-sm font-medium text-stone-500">Your last transcript</p>
           {editing ? (
             <textarea
@@ -334,8 +339,10 @@ export function ComposerMicButton({
         listening ? "Stop listening" : "Start speaking to the character"
       }
       className={[
-        "relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white shadow-sm",
-        listening ? "orbis-mic-live bg-emerald-500" : "bg-orbis-gold",
+        "relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white shadow-[0_10px_18px_-10px_rgba(165,124,58,0.9)] transition hover:brightness-105",
+        listening
+          ? "orbis-mic-live bg-emerald-500 shadow-[0_10px_18px_-10px_rgba(16,185,129,0.9)]"
+          : "bg-orbis-gold hover:bg-orbis-gold-deep",
         busy && !listening ? "opacity-60" : "",
       ].join(" ")}
     >
@@ -366,7 +373,7 @@ function ControlChip({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
+      className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-stone-200/90 bg-white px-3 text-xs text-stone-600 hover:border-stone-300 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
     >
       {icon}
       {label}

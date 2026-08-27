@@ -111,6 +111,23 @@ button:disabled,
   animation-delay: 0.55s;
 }
 
+.orbis-mic-live {
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45);
+  animation: orbis-mic-live 1.6s ease-out infinite;
+}
+
+@keyframes orbis-mic-live {
+  0% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(34, 197, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
 @keyframes orbis-mic-wave {
   0% {
     opacity: 0.7;
