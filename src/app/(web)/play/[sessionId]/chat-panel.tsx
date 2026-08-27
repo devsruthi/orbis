@@ -418,11 +418,6 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
                       : "min-w-0 rounded-3xl bg-white px-4 py-3 text-sm shadow-sm dark:bg-zinc-900"
                   }
                 >
-                  {turn.role !== "user" ? (
-                    <p className="mb-1 text-xs font-medium text-stone-500">
-                      {session.character.name}
-                    </p>
-                  ) : null}
                   <p className="whitespace-pre-wrap break-words">{turn.text}</p>
                   {turn.role !== "user" &&
                   translationsOn &&
