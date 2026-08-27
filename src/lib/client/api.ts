@@ -179,10 +179,14 @@ export const orbisApi = {
       method: "POST",
       body: JSON.stringify({ message, inputMode }),
     }),
-  checkMessage: (sessionId: string, message: string) =>
+  checkMessage: (
+    sessionId: string,
+    message: string,
+    inputMode: "text" | "voice" = "text",
+  ) =>
     request<PublicMessageCheck>(`/api/sessions/${sessionId}/check-message`, {
       method: "POST",
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, inputMode }),
     }),
   completeSession: (sessionId: string) =>
     request<{

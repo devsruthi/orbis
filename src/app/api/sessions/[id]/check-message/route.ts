@@ -31,6 +31,7 @@ export async function POST(
       languageCode: session.language,
       languageName,
       level: session.level,
+      inputMode: parsed.data.inputMode,
     });
     return jsonOk(result);
   } catch (error) {

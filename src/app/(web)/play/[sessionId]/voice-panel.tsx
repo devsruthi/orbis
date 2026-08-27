@@ -169,7 +169,14 @@ export function VoiceDock(props: {
             />
           ) : (
             <p className="font-serif text-lg leading-relaxed">
-              “{state.transcript}”
+              “
+              {!props.checking &&
+              props.check &&
+              props.check.issues.length === 0 &&
+              props.check.corrected.trim()
+                ? props.check.corrected
+                : state.transcript}
+              ”
             </p>
           )}
           {props.checking && !editing ? (
@@ -243,7 +250,14 @@ export function VoiceDock(props: {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => props.onSendTranscript()}
+                    onClick={() =>
+                      props.onSendTranscript(
+                        props.check?.issues.length === 0 &&
+                          props.check.corrected.trim()
+                          ? props.check.corrected
+                          : undefined,
+                      )
+                    }
                     disabled={props.disabled || props.checking}
                     className={PRIMARY_BUTTON}
                   >

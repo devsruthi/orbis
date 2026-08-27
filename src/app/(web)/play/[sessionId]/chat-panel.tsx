@@ -102,7 +102,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
     setVoiceCheck(null);
     setVoiceChecking(true);
     void orbisApi
-      .checkMessage(sessionId, text)
+      .checkMessage(sessionId, text, "voice")
       .then((result) => {
         if (!cancelled) {
           setVoiceCheck(result);

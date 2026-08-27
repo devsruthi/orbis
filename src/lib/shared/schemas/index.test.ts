@@ -124,6 +124,15 @@ describe("Zod validation", () => {
     expect(MessageCheckBodySchema.parse({ message: "enshuldigung" })).toEqual({
       message: "enshuldigung",
     });
+    expect(
+      MessageCheckBodySchema.parse({
+        message: "guten Morgen",
+        inputMode: "voice",
+      }),
+    ).toEqual({
+      message: "guten Morgen",
+      inputMode: "voice",
+    });
     expect(MessageCheckBodySchema.safeParse({ message: "   " }).success).toBe(
       false,
     );

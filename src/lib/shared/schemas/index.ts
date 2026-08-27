@@ -639,6 +639,7 @@ export const MessageCheckResultSchema = z.object({
 export const MessageCheckBodySchema = z
   .object({
     message: z.string().trim().min(1).max(4000),
+    inputMode: z.enum(["text", "voice"]).optional(),
   })
   .strict();
 

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ClaudeError } from "@/lib/server/claude/errors";
 import {
+  applyVoiceCasingPolicy,
   createMessageChecker,
   parseMessageCheckResult,
 } from "./checker";
@@ -98,5 +99,50 @@ describe("message checker (mocked Claude)", () => {
     expect(() => parseMessageCheckResult({ issues: "none" })).toThrow(
       ClaudeError,
     );
+  });
+
+  it("hides capitalization-only issues on spoken transcripts and keeps the cased correction", async () => {
+    const checker = createMessageChecker(async () => ({
+      ok: false,
+      corrected: "Guten Morgen",
+      issues: [
+        {
+          category: "spelling",
+          original: "guten Morgen",
+          correction: "Guten Morgen",
+          explanation: "Greetings in German start with a capital letter.",
+        },
+      ],
+    }));
+    const output = await checker.check({
+      message: "guten Morgen",
+      languageCode: "de",
+      languageName: "German",
+      level: "A1",
+      inputMode: "voice",
+    });
+    expect(output.ok).toBe(true);
+    expect(output.corrected).toBe("Guten Morgen");
+    expect(output.issues).toEqual([]);
+    expect(
+      applyVoiceCasingPolicy({
+        ok: false,
+        corrected: "Guten Morgen, ein Brötchen bitte.",
+        issues: [
+          {
+            category: "spelling",
+            original: "guten",
+            correction: "Guten",
+            explanation: "Capitalize the greeting.",
+          },
+          {
+            category: "vocabulary",
+            original: "roll",
+            correction: "Brötchen",
+            explanation: "Use Brötchen, not the English word.",
+          },
+        ],
+      }).issues.map((issue) => issue.category),
+    ).toEqual(["vocabulary"]);
   });
 });

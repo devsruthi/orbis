@@ -73,6 +73,31 @@ export function parseMessageCheckResult(raw: unknown): MessageCheckResult {
   };
 }
 
+export function differsOnlyByCasing(
+  left: string,
+  right: string,
+  locale = "de",
+): boolean {
+  return (
+    left.trim().toLocaleLowerCase(locale) ===
+    right.trim().toLocaleLowerCase(locale)
+  );
+}
+
+export function applyVoiceCasingPolicy(
+  result: MessageCheckResult,
+  locale = "de",
+): MessageCheckResult {
+  const issues = result.issues.filter(
+    (issue) => !differsOnlyByCasing(issue.original, issue.correction, locale),
+  );
+  return {
+    ok: issues.length === 0,
+    corrected: result.corrected,
+    issues,
+  };
+}
+
 type StructuredComplete = (input: {
   tool: Anthropic.Tool;
   parse: (raw: unknown) => unknown;
@@ -86,6 +111,7 @@ export type MessageCheckInput = {
   languageCode: string;
   languageName: string;
   level: string;
+  inputMode?: "text" | "voice";
 };
 
 export type MessageChecker = {
@@ -107,6 +133,7 @@ export function createMessageChecker(
             languageName: input.languageName,
             languageCode: input.languageCode,
             level: input.level,
+            inputMode: input.inputMode,
           }),
           messages: [
             {
@@ -117,10 +144,14 @@ export function createMessageChecker(
           maxTokens: CHECK_MAX_TOKENS,
         });
         const output = parseMessageCheckResult(raw);
+        const result =
+          input.inputMode === "voice"
+            ? applyVoiceCasingPolicy(output, input.languageCode)
+            : output;
         logClaude("request_end", {
           latencyMs: Date.now() - started,
         });
-        return output;
+        return result;
       } catch (error) {
         logClaude("request_error", {
           latencyMs: Date.now() - started,

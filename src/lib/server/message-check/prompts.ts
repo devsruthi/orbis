@@ -2,7 +2,16 @@ export function buildMessageCheckSystemPrompt(input: {
   languageName: string;
   languageCode: string;
   level: string;
+  inputMode?: "text" | "voice";
 }): string {
+  const voiceCasing =
+    input.inputMode === "voice"
+      ? [
+          "This message was spoken, not typed. Speech-to-text often loses capitalization.",
+          "Do not flag capitalization, lowercase, or uppercase issues.",
+          "Still put natural capitalization in `corrected`.",
+        ]
+      : [];
   return [
     "You are the pre-send language checker for Orbis.",
     "The learner is about to send one message in a live conversation.",
@@ -21,6 +30,7 @@ export function buildMessageCheckSystemPrompt(input: {
     "4. Word-order errors.",
     "5. Wrong word choice, mixed-language words, or words that are not in the target language (example: coffee → Kaffee).",
     "",
+    ...voiceCasing,
     "Do not invent mistakes. Do not flag a correct sentence because another phrasing is more stylish.",
     "Do not over-correct minor style at this CEFR level.",
     "If the message is acceptable, return ok true, the original text as corrected, and an empty issues list.",

@@ -21,4 +21,22 @@ describe("message check prompts", () => {
       "enshuldigung",
     );
   });
+
+  it("tells the checker not to flag capitalization on spoken messages", () => {
+    const spoken = buildMessageCheckSystemPrompt({
+      languageName: "German",
+      languageCode: "de",
+      level: "A1",
+      inputMode: "voice",
+    });
+    expect(spoken).toContain("Do not flag capitalization");
+    expect(
+      buildMessageCheckSystemPrompt({
+        languageName: "German",
+        languageCode: "de",
+        level: "A1",
+        inputMode: "text",
+      }),
+    ).not.toContain("Do not flag capitalization");
+  });
 });
