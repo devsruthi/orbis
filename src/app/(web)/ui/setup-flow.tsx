@@ -32,7 +32,7 @@ const LANGUAGE_TONE: Record<string, string> = {
 export function SetupFlow(props: {
   currentLanguage?: string;
   currentLevel?: string;
-  paths?: { language: string; level: string }[];
+  paths?: { language: string; level: string; started?: boolean }[];
   wizard?: boolean;
   compact?: boolean;
   onSaved: () => Promise<void> | void;
@@ -181,12 +181,12 @@ export function SetupFlow(props: {
                     "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide",
                     on
                       ? "bg-white/15 text-white"
-                      : enrolled
+                      : enrolled?.started
                         ? "bg-orbis-gold/15 text-orbis-gold-deep"
                         : "bg-orbis-gold/10 text-orbis-gold",
                   ].join(" ")}
                 >
-                  {enrolled ? "In progress" : "Ready"}
+                  {enrolled?.started ? "In progress" : "Ready"}
                 </span>
               </button>
             </li>

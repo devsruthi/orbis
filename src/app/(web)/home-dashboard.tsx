@@ -8,10 +8,10 @@ import { startErrorMessage, startScenario } from "@/lib/client/start-session";
 import { playPath } from "@/lib/client/routes";
 import {
   accuracyPercent,
-  enrolledPathLabel,
   greetingForHour,
   humanizeConcept,
   languageFlag,
+  pathHasStartedScene,
   percent,
 } from "@/lib/client/labels";
 import { ErrorState, EmptyState, PageSkeleton } from "./ui/states";
@@ -43,6 +43,21 @@ export function HomeDashboard() {
   const learner = data.learner;
   const paths = data.paths;
   const greeting = hour === null ? "Welcome back" : greetingForHour(hour);
+  const startedPaths = paths.filter(pathHasStartedScene);
+  const hasProgress = startedPaths.length > 0;
+
+  const setupFlow = (
+    <SetupFlow
+      key={paths.map((path) => `${path.language}-${path.level}`).join("|")}
+      compact
+      paths={paths.map((path) => ({
+        language: path.language,
+        level: path.level,
+        started: pathHasStartedScene(path),
+      }))}
+      onSaved={() => reload()}
+    />
+  );
 
   async function continuePractice() {
     if (dueCount > 0) {
@@ -105,16 +120,15 @@ export function HomeDashboard() {
     <div className="flex flex-col gap-8 sm:gap-10">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm text-stone-500">
-            {enrolledPathLabel(paths) || "Your languages"}
-          </p>
-          <h1 className="mt-2 font-serif text-4xl font-medium tracking-tight sm:text-5xl">
+          <h1 className="font-serif text-4xl font-medium tracking-tight sm:text-5xl">
             {greeting}
           </h1>
           <p className="mt-2 max-w-md text-base text-stone-600 dark:text-zinc-400">
-            {data.summary.completedSessions === 0
-              ? "Your first mission is waiting."
-              : "Step back into the world."}
+            {hasProgress
+              ? data.summary.completedSessions === 0
+                ? "Your first mission is waiting."
+                : "Step back into the world."
+              : "Choose a language and level, then enter a scene to start your path."}
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
@@ -135,6 +149,8 @@ export function HomeDashboard() {
         </div>
       </header>
       {startError ? <p className="text-sm text-red-700">{startError}</p> : null}
+
+      {hasProgress ? null : setupFlow}
 
       <dl className="grid grid-cols-3 gap-2 text-sm sm:gap-3">
         <div className={CARD}>
@@ -212,15 +228,7 @@ export function HomeDashboard() {
         </ul>
       </section>
 
-      <SetupFlow
-        key={paths.map((path) => `${path.language}-${path.level}`).join("|")}
-        compact
-        paths={paths.map((path) => ({
-          language: path.language,
-          level: path.level,
-        }))}
-        onSaved={() => reload()}
-      />
+      {hasProgress ? setupFlow : null}
 
       <section className="flex flex-col gap-3">
         <SectionLabel>Today</SectionLabel>

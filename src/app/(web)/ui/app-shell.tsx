@@ -11,6 +11,7 @@ import {
   DashboardProvider,
   useLearnerDashboard,
 } from "@/lib/client/use-dashboard";
+import { pathHasStartedScene } from "@/lib/client/labels";
 import {
   HomeIcon,
   MicIcon,
@@ -46,6 +47,7 @@ function AppShellFrame({ children }: { children: ReactNode }) {
   const { data } = useLearnerDashboard();
   const learner = data?.learner;
   const paths = data?.paths ?? [];
+  const startedPaths = paths.filter(pathHasStartedScene);
   const recommendation = data?.recommendations[0];
   const recommendedScenario = recommendation
     ? paths
@@ -90,13 +92,13 @@ function AppShellFrame({ children }: { children: ReactNode }) {
             </span>
           </Link>
 
-          {learner?.setupComplete ? (
+          {startedPaths.length > 0 ? (
             <div className="mt-5 px-2">
               <p className="text-[11px] uppercase tracking-[0.16em] text-stone-400">
                 In progress
               </p>
               <div className="mt-2">
-                <PathChips paths={paths} />
+                <PathChips paths={startedPaths} />
               </div>
             </div>
           ) : null}
@@ -180,7 +182,7 @@ function AppShellFrame({ children }: { children: ReactNode }) {
               </span>
             </Link>
             <div className="flex min-w-0 items-center gap-3">
-              {learner?.setupComplete ? <PathChips paths={paths} /> : null}
+              {startedPaths.length > 0 ? <PathChips paths={startedPaths} /> : null}
               <UserMenu compact />
             </div>
           </div>

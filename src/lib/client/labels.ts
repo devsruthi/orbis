@@ -69,6 +69,16 @@ export function greetingForHour(hour: number): string {
   return "Good evening";
 }
 
+export function pathHasStartedScene(path: {
+  categories: {
+    scenarios: { attemptStatus: string }[];
+  }[];
+}): boolean {
+  return path.categories.some((category) =>
+    category.scenarios.some((scenario) => scenario.attemptStatus !== "never"),
+  );
+}
+
 export function enrolledPathLabel(
   paths: { languageName: string; level: string }[],
 ): string {
