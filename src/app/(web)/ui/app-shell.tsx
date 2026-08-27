@@ -78,15 +78,20 @@ function AppShellFrame({ children }: { children: ReactNode }) {
     <div className="flex h-dvh min-h-0 bg-background text-foreground">
       <aside className="hidden h-dvh min-h-0 w-72 shrink-0 flex-col overflow-hidden border-r border-stone-200/70 bg-white/80 dark:border-zinc-800 dark:bg-zinc-950/40 lg:flex">
         <div className="shrink-0 px-4 pt-5">
-          <Link href="/" className="flex items-center gap-2 px-2 py-1 text-orbis-gold">
-            <OrbitMark className="h-8 w-8" />
+          <UserMenu />
+
+          <Link
+            href="/"
+            className="mt-5 flex items-center gap-2 px-2 py-1 text-orbis-gold"
+          >
+            <OrbitMark className="h-7 w-7" />
             <span className="font-serif text-2xl tracking-wide text-foreground">
               ORBIS
             </span>
           </Link>
 
           {learner?.setupComplete ? (
-            <div className="mt-6 rounded-2xl bg-stone-50 px-3 py-3 dark:bg-zinc-900/80">
+            <div className="mt-5 px-2">
               <p className="text-[11px] uppercase tracking-[0.16em] text-stone-400">
                 In progress
               </p>
@@ -157,14 +162,11 @@ function AppShellFrame({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        <div className="shrink-0 border-t border-stone-200/70 px-4 py-4 dark:border-zinc-800">
-          <div className="flex flex-col gap-3">
-            <UserMenu />
-            <div className="flex items-center justify-between px-1">
-              <ThemeToggle />
-            </div>
-            <p className="px-1 text-[11px] text-stone-400">Made with care by Orbis.</p>
+        <div className="shrink-0 px-4 py-4">
+          <div className="flex items-center justify-between px-1">
+            <ThemeToggle />
           </div>
+          <p className="mt-3 px-1 text-[11px] text-stone-400">Made with care by Orbis.</p>
         </div>
       </aside>
 
@@ -177,11 +179,9 @@ function AppShellFrame({ children }: { children: ReactNode }) {
                 ORBIS
               </span>
             </Link>
-            <div className="flex min-w-0 items-center gap-2">
+            <div className="flex min-w-0 items-center gap-3">
               {learner?.setupComplete ? <PathChips paths={paths} /> : null}
-              <div className="max-w-44 shrink-0">
-                <UserMenu compact />
-              </div>
+              <UserMenu compact />
             </div>
           </div>
         </header>
