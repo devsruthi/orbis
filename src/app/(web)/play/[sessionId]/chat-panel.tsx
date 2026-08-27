@@ -14,11 +14,11 @@ import { userFacingRequestError } from "@/lib/client/network";
 import { onAppResume } from "@/lib/client/platform";
 import { useVoiceConversation } from "@/lib/client/voice/use-voice-conversation";
 import { languageOption } from "@/lib/shared/learning-options";
-import { GlobeIcon, HomeIcon, SpeakerIcon } from "../../ui/icons";
+import { GlobeIcon, HomeIcon, SendIcon, SpeakerIcon } from "../../ui/icons";
 import { LevelBadge, PRIMARY_BUTTON, SECONDARY_BUTTON } from "../../ui/page-header";
 import { EvaluationPanel } from "./evaluation-panel";
 import { MessageCheckCard } from "./message-check-card";
-import { VoicePanel } from "./voice-panel";
+import { ComposerMicButton, VoiceDock } from "./voice-panel";
 
 const POLL_MS = 2500;
 const MAX_POLLS = 36;
@@ -37,7 +37,6 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   const [loading, setLoading] = useState(true);
   const [timedOut, setTimedOut] = useState(false);
   const [pollNonce, setPollNonce] = useState(0);
-  const [composer, setComposer] = useState<"voice" | "text">("voice");
   const [captionsOn, setCaptionsOn] = useState(true);
   const bottom = useRef<HTMLDivElement>(null);
   const polls = useRef(0);
@@ -260,23 +259,18 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   const active = session.status === "active" && !missionEnded;
   const processing = session.status === "processing";
   const failed = session.status === "evaluation_failed";
-  const lastCharacterTurn = [...session.turns]
-    .reverse()
-    .find((turn) => turn.role !== "user");
   const languageName =
     languageOption(session.language)?.name ?? session.language.toUpperCase();
-  const voiceOn = composer === "voice" && voice.capabilities.speechToText;
   const missionTitle =
     session.simulation?.missionTitle ||
     session.scenarioTitle ||
     session.scenarioId;
-  const earlierTurns = lastCharacterTurn
-    ? session.turns.filter((turn) => turn.id !== lastCharacterTurn.id)
-    : session.turns;
+  const listening = voice.state.status === "listening";
+  const composerBusy = sending || completing || checking;
 
   return (
-    <main className="flex min-h-full w-full min-w-0 flex-col gap-5">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <main className="flex h-full min-h-0 w-full min-w-0 flex-col">
+      <header className="flex shrink-0 flex-col gap-3 pb-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <Link
             href="/"
@@ -302,79 +296,8 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
         </div>
       </header>
 
-      {lastCharacterTurn ? (
-        <section className="orbis-card flex gap-4 p-4 sm:p-5">
-          <span
-            aria-hidden
-            className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-stone-200 font-serif text-2xl text-orbis-dusk dark:from-zinc-800 dark:to-zinc-700 dark:text-zinc-100"
-          >
-            {session.character.name.slice(0, 1)}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium">{session.character.name}</p>
-            <div className="mt-1 flex items-start gap-2">
-              {captionsOn ? (
-                <p className="min-w-0 flex-1 font-serif text-lg leading-relaxed">
-                  “{lastCharacterTurn.text}”
-                </p>
-              ) : (
-                <p className="min-w-0 flex-1 text-sm text-stone-400">
-                  Captions off
-                </p>
-              )}
-              {voice.capabilities.textToSpeech ? (
-                <PlayMessageButton
-                  text={lastCharacterTurn.text}
-                  onPlay={voice.speakText}
-                />
-              ) : null}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {earlierTurns.length > 0 ? (
-        <section className="flex max-h-48 min-h-0 flex-col gap-2 overflow-y-auto rounded-3xl bg-white/60 p-3 dark:bg-zinc-900/50">
-          {earlierTurns.map((turn) => (
-            <div
-              key={turn.id}
-              className={
-                turn.role === "user"
-                  ? "flex max-w-[85%] items-end gap-2 self-end"
-                  : "flex max-w-[85%] items-end gap-2 self-start"
-              }
-            >
-              {turn.role === "user" && voice.capabilities.textToSpeech ? (
-                <PlayMessageButton
-                  text={turn.text}
-                  onPlay={voice.speakText}
-                />
-              ) : null}
-              <div
-                className={
-                  turn.role === "user"
-                    ? "min-w-0 rounded-3xl bg-orbis-dusk px-4 py-2 text-sm text-white"
-                    : "min-w-0 rounded-3xl bg-[#efe6d6] px-4 py-2 text-sm dark:bg-zinc-800"
-                }
-              >
-                <p className="whitespace-pre-wrap break-words">{turn.text}</p>
-              </div>
-              {turn.role !== "user" && voice.capabilities.textToSpeech ? (
-                <PlayMessageButton
-                  text={turn.text}
-                  onPlay={voice.speakText}
-                />
-              ) : null}
-            </div>
-          ))}
-          <div ref={bottom} />
-        </section>
-      ) : (
-        <div ref={bottom} />
-      )}
-
       {session.simulation ? (
-        <ol className="flex flex-col gap-1 text-sm text-stone-600 dark:text-zinc-400">
+        <ol className="flex shrink-0 flex-wrap gap-x-4 gap-y-1 pb-3 text-sm text-stone-600 dark:text-zinc-400">
           {session.simulation.objectives.map((objective) => (
             <li key={objective.id} className="flex gap-2">
               <span aria-hidden>
@@ -395,230 +318,240 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
         </ol>
       ) : null}
 
-      {session.status === "active" && missionStatus === "failed" ? (
-        <section className="orbis-card p-5">
-          <h2 className="font-serif text-xl">Mission ended</h2>
-          <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
-            {session.simulation?.currentSituation ??
-              "This path is no longer open. You can still review the conversation."}
-          </p>
-          <button
-            type="button"
-            onClick={() => void onComplete()}
-            disabled={completing}
-            className={`${PRIMARY_BUTTON} mt-3 w-full sm:w-auto`}
-          >
-            {completing ? "Starting…" : "See how you did"}
-          </button>
-        </section>
-      ) : null}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pb-3">
+        {session.turns.length > 0 ? (
+          <section className="flex flex-col gap-2">
+            {session.turns.map((turn) => (
+              <div
+                key={turn.id}
+                className={
+                  turn.role === "user"
+                    ? "flex max-w-[85%] items-end gap-2 self-end"
+                    : "flex max-w-[85%] items-end gap-2 self-start"
+                }
+              >
+                {turn.role === "user" && voice.capabilities.textToSpeech ? (
+                  <PlayMessageButton
+                    text={turn.text}
+                    onPlay={voice.speakText}
+                  />
+                ) : null}
+                <div
+                  className={
+                    turn.role === "user"
+                      ? "min-w-0 rounded-3xl bg-orbis-dusk px-4 py-2 text-sm text-white"
+                      : "min-w-0 rounded-3xl bg-white px-4 py-3 text-sm shadow-sm dark:bg-zinc-900"
+                  }
+                >
+                  {turn.role !== "user" ? (
+                    <p className="mb-1 text-xs font-medium text-stone-500">
+                      {session.character.name}
+                    </p>
+                  ) : null}
+                  {turn.role !== "user" && !captionsOn ? (
+                    <p className="text-stone-400">Captions off</p>
+                  ) : (
+                    <p className="whitespace-pre-wrap break-words">{turn.text}</p>
+                  )}
+                </div>
+                {turn.role !== "user" && voice.capabilities.textToSpeech ? (
+                  <PlayMessageButton
+                    text={turn.text}
+                    onPlay={voice.speakText}
+                  />
+                ) : null}
+              </div>
+            ))}
+            <div ref={bottom} />
+          </section>
+        ) : (
+          <div ref={bottom} />
+        )}
 
-      {session.status === "active" && missionStatus === "successful" ? (
-        <section className="orbis-card p-5">
-          <h2 className="font-serif text-xl">Mission complete</h2>
-          <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
-            Your conversation is being prepared for evaluation.
-          </p>
-          <button
-            type="button"
-            onClick={() => void onComplete()}
-            disabled={completing}
-            className={`${PRIMARY_BUTTON} mt-3 w-full sm:w-auto`}
-          >
-            {completing ? "Starting…" : "Continue to evaluation"}
-          </button>
-        </section>
-      ) : null}
+        {session.status === "active" && missionStatus === "failed" ? (
+          <section className="orbis-card p-5">
+            <h2 className="font-serif text-xl">Mission ended</h2>
+            <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
+              {session.simulation?.currentSituation ??
+                "This path is no longer open. You can still review the conversation."}
+            </p>
+            <button
+              type="button"
+              onClick={() => void onComplete()}
+              disabled={completing}
+              className={`${PRIMARY_BUTTON} mt-3 w-full sm:w-auto`}
+            >
+              {completing ? "Starting…" : "See how you did"}
+            </button>
+          </section>
+        ) : null}
+
+        {session.status === "active" && missionStatus === "successful" ? (
+          <section className="orbis-card p-5">
+            <h2 className="font-serif text-xl">Mission complete</h2>
+            <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
+              Your conversation is being prepared for evaluation.
+            </p>
+            <button
+              type="button"
+              onClick={() => void onComplete()}
+              disabled={completing}
+              className={`${PRIMARY_BUTTON} mt-3 w-full sm:w-auto`}
+            >
+              {completing ? "Starting…" : "Continue to evaluation"}
+            </button>
+          </section>
+        ) : null}
+
+        {!active && evaluation ? (
+          <EvaluationPanel evaluation={evaluation} />
+        ) : null}
+        {!active && processing ? (
+          <section className="orbis-card p-5">
+            <h2 className="font-serif text-xl">
+              {missionStatus === "successful" ? "Mission complete" : "Great job!"}
+            </h2>
+            <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
+              {timedOut
+                ? "Analysis is taking longer than expected. You can keep waiting or try again."
+                : "Your conversation is being evaluated..."}
+            </p>
+            {session.followUp && session.followUp.length > 0 ? (
+              <p className="mt-2 text-sm text-stone-500">
+                {session.followUp[0]}
+              </p>
+            ) : null}
+            {timedOut ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setTimedOut(false);
+                  setPollNonce((value) => value + 1);
+                }}
+                className={`${SECONDARY_BUTTON} mt-3`}
+              >
+                Check again
+              </button>
+            ) : null}
+          </section>
+        ) : null}
+        {!active && failed ? (
+          <section className="orbis-card p-5">
+            <h2 className="font-serif text-xl">Analysis failed</h2>
+            <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
+              We could not finish evaluating this conversation. Your chat is saved;
+              you can retry analysis.
+            </p>
+            <button
+              type="button"
+              onClick={() => void onComplete()}
+              disabled={completing}
+              className={`${PRIMARY_BUTTON} mt-3 w-full sm:w-auto`}
+            >
+              {completing ? "Retrying…" : "Retry analysis"}
+            </button>
+          </section>
+        ) : null}
+        {!active && !evaluation && !processing && !failed ? (
+          <p className="text-sm text-zinc-500">Evaluation is not available yet.</p>
+        ) : null}
+        {!active && error ? (
+          <p className="text-sm text-red-600">{error}</p>
+        ) : null}
+      </div>
 
       {active ? (
-        <div className="flex flex-col gap-4 pb-[max(0.5rem,env(safe-area-inset-bottom),var(--keyboard-inset,0px))]">
-          <div className="mx-auto flex w-full max-w-xs rounded-full bg-stone-100 p-1 dark:bg-zinc-900">
-            <button
-              type="button"
-              onClick={() => setComposer("text")}
-              aria-pressed={!voiceOn}
-              className={[
-                "min-h-10 flex-1 rounded-full text-sm",
-                !voiceOn
-                  ? "bg-orbis-gold text-white"
-                  : "text-stone-500",
-              ].join(" ")}
-            >
-              Text
-            </button>
-            <button
-              type="button"
-              onClick={() => setComposer("voice")}
-              aria-pressed={voiceOn}
-              disabled={!voice.capabilities.speechToText}
-              className={[
-                "min-h-10 flex-1 rounded-full text-sm disabled:opacity-50",
-                voiceOn
-                  ? "bg-orbis-gold text-white"
-                  : "text-stone-500",
-              ].join(" ")}
-            >
-              Voice
-            </button>
-          </div>
+        <div className="shrink-0 border-t border-stone-200/80 bg-[#f6f3ec]/95 pt-3 dark:border-zinc-800 dark:bg-[#16130f]/95 pb-[max(0.75rem,env(safe-area-inset-bottom),var(--keyboard-inset,0px))]">
+          <VoiceDock
+            state={voice.state}
+            capabilities={voice.capabilities}
+            errorMessage={voice.errorMessage}
+            disabled={composerBusy}
+            captionsOn={captionsOn}
+            onToggleCaptions={() => setCaptionsOn((value) => !value)}
+            onSendTranscript={() => void voice.sendTranscript()}
+            onTryAgain={() => void voice.tryAgain()}
+            onDiscard={voice.discardTranscript}
+            onPause={voice.pause}
+            onResume={voice.resume}
+            onStopSpeech={voice.stopSpeech}
+            onReplay={voice.replay}
+            onSetSpeed={voice.setSpeed}
+          />
 
-          {voiceOn ? (
-            <VoicePanel
-              state={voice.state}
-              capabilities={voice.capabilities}
-              errorMessage={voice.errorMessage}
-              disabled={sending || completing}
-              languageName={languageName}
-              captionsOn={captionsOn}
-              onToggleCaptions={() => setCaptionsOn((value) => !value)}
-              onStartListening={() => void voice.startListening()}
-              onStopListening={voice.stopListening}
-              onSendTranscript={() => void voice.sendTranscript()}
-              onTryAgain={() => void voice.tryAgain()}
-              onDiscard={voice.discardTranscript}
-              onPause={voice.pause}
-              onResume={voice.resume}
-              onStopSpeech={voice.stopSpeech}
-              onReplay={voice.replay}
-              onSetSpeed={voice.setSpeed}
-            />
-          ) : (
-            <form onSubmit={onSubmit} className="flex flex-col gap-2">
+          {messageCheck && messageCheck.issues.length > 0 ? (
+            <div className="mt-3">
+              <MessageCheckCard
+                original={message.trim()}
+                result={messageCheck}
+                disabled={composerBusy}
+                onSendOriginal={() => void deliverTurn(message.trim())}
+                onSendCorrection={() => void deliverTurn(messageCheck.corrected)}
+                onEdit={() => setMessageCheck(null)}
+              />
+            </div>
+          ) : null}
+
+          <form onSubmit={onSubmit} className="mt-3 flex items-end gap-2">
+            <div className="relative min-w-0 flex-1">
               <label htmlFor="orbis-message" className="sr-only">
                 Your message
               </label>
-              <textarea
+              <input
                 id="orbis-message"
-                value={message}
+                value={
+                  listening
+                    ? voice.state.interimTranscript
+                    : message
+                }
                 onChange={(event) => {
                   setMessage(event.target.value);
                   if (messageCheck) {
                     setMessageCheck(null);
                   }
                 }}
-                rows={3}
                 maxLength={4000}
-                placeholder="Write in the target language…"
-                className="min-h-[5.5rem] w-full rounded-2xl border border-stone-300 bg-white/80 p-3 dark:border-zinc-700 dark:bg-zinc-950"
-                disabled={sending || completing || checking}
+                placeholder={`Type your message in ${languageName}…`}
+                className="h-12 w-full rounded-full border border-stone-300 bg-white py-2 pl-4 pr-12 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+                disabled={composerBusy || listening}
+                autoComplete="off"
               />
-              {messageCheck && messageCheck.issues.length > 0 ? (
-                <>
-                  <MessageCheckCard
-                    original={message.trim()}
-                    result={messageCheck}
-                    disabled={sending || completing}
-                    onSendOriginal={() => void deliverTurn(message.trim())}
-                    onSendCorrection={() =>
-                      void deliverTurn(messageCheck.corrected)
-                    }
-                    onEdit={() => setMessageCheck(null)}
-                  />
-                  {error ? (
-                    <p className="text-sm text-red-600">{error}</p>
-                  ) : null}
-                </>
-              ) : (
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                  <button
-                    type="submit"
-                    disabled={sending || completing || checking}
-                    className={`${PRIMARY_BUTTON} w-full sm:w-auto`}
-                  >
-                    {checking
-                      ? "Checking…"
-                      : sending
-                        ? "Sending…"
-                        : "Send"}
-                  </button>
-                  {error ? <p className="text-sm text-red-600">{error}</p> : null}
-                </div>
-              )}
-            </form>
-          )}
-
-          <div className="flex flex-col items-center gap-2 text-sm text-stone-500">
-            {voiceOn ? (
               <button
-                type="button"
-                onClick={() => setComposer("text")}
-                className="underline"
+                type="submit"
+                disabled={composerBusy || listening || !message.trim()}
+                className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 disabled:opacity-40 dark:hover:bg-zinc-800"
+                aria-label={
+                  checking ? "Checking message" : sending ? "Sending" : "Send"
+                }
               >
-                You can also type instead. Switch to text.
+                <SendIcon className="h-4 w-4" />
               </button>
-            ) : voice.capabilities.speechToText ? (
-              <button
-                type="button"
-                onClick={() => setComposer("voice")}
-                className="underline"
-              >
-                Switch to voice
-              </button>
+            </div>
+            {voice.capabilities.speechToText ? (
+              <ComposerMicButton
+                state={voice.state}
+                disabled={composerBusy}
+                onStart={() => void voice.startListening()}
+                onStop={voice.stopListening}
+              />
             ) : null}
+          </form>
+
+          {error ? (
+            <p className="mt-2 text-center text-sm text-red-600">{error}</p>
+          ) : null}
+
+          <div className="mt-2 flex justify-center">
             <button
               type="button"
               onClick={() => void onComplete()}
-              disabled={sending || completing}
-              className={`${SECONDARY_BUTTON} w-full sm:w-auto`}
+              disabled={composerBusy}
+              className="text-sm text-stone-500 underline"
             >
               {completing ? "Starting…" : "Complete session"}
             </button>
-            {voiceOn && error ? (
-              <p className="text-sm text-red-600">{error}</p>
-            ) : null}
           </div>
         </div>
-      ) : evaluation ? (
-        <EvaluationPanel evaluation={evaluation} />
-      ) : processing ? (
-        <section className="orbis-card p-5">
-          <h2 className="font-serif text-xl">
-            {missionStatus === "successful" ? "Mission complete" : "Great job!"}
-          </h2>
-          <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
-            {timedOut
-              ? "Analysis is taking longer than expected. You can keep waiting or try again."
-              : "Your conversation is being evaluated..."}
-          </p>
-          {session.followUp && session.followUp.length > 0 ? (
-            <p className="mt-2 text-sm text-stone-500">
-              {session.followUp[0]}
-            </p>
-          ) : null}
-          {timedOut ? (
-            <button
-              type="button"
-              onClick={() => {
-                setTimedOut(false);
-                setPollNonce((value) => value + 1);
-              }}
-              className={`${SECONDARY_BUTTON} mt-3`}
-            >
-              Check again
-            </button>
-          ) : null}
-        </section>
-      ) : failed ? (
-        <section className="orbis-card p-5">
-          <h2 className="font-serif text-xl">Analysis failed</h2>
-          <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
-            We could not finish evaluating this conversation. Your chat is saved;
-            you can retry analysis.
-          </p>
-          <button
-            type="button"
-            onClick={() => void onComplete()}
-            disabled={completing}
-            className={`${PRIMARY_BUTTON} mt-3 w-full sm:w-auto`}
-          >
-            {completing ? "Retrying…" : "Retry analysis"}
-          </button>
-        </section>
-      ) : (
-        <p className="text-sm text-zinc-500">Evaluation is not available yet.</p>
-      )}
-      {!active && error ? (
-        <p className="text-sm text-red-600">{error}</p>
       ) : null}
     </main>
   );

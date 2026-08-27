@@ -43,6 +43,7 @@ function AppShellFrame({ children }: { children: ReactNode }) {
   const immersive = Boolean(
     pathname?.startsWith("/play") || pathname?.startsWith("/review"),
   );
+  const playSession = Boolean(pathname?.startsWith("/play"));
   const { data } = useLearnerDashboard();
   const learner = data?.learner;
   const paths = data?.paths ?? [];
@@ -148,11 +149,21 @@ function AppShellFrame({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <main
+          className={[
+            "min-h-0 flex-1",
+            playSession
+              ? "overflow-hidden"
+              : "overflow-y-auto overscroll-contain",
+          ].join(" ")}
+        >
           <div
             className={[
-              "mx-auto min-h-full w-full min-w-0 px-4 pt-6 sm:px-6 sm:pt-8 lg:max-w-5xl lg:px-8 lg:pt-10",
-              immersive ? "pb-12 sm:pb-16" : "pb-16 sm:pb-24",
+              "mx-auto w-full min-w-0",
+              playSession
+                ? "flex h-full min-h-0 flex-col px-4 pt-4 sm:px-6 lg:max-w-5xl lg:px-8"
+                : "min-h-full px-4 pt-6 sm:px-6 sm:pt-8 lg:max-w-5xl lg:px-8 lg:pt-10",
+              playSession ? "" : immersive ? "pb-12 sm:pb-16" : "pb-16 sm:pb-24",
             ].join(" ")}
           >
             {children}

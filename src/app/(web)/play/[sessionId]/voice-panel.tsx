@@ -52,16 +52,13 @@ function statusLabel(status: VoiceState["status"]): string {
   return "Idle";
 }
 
-export function VoicePanel(props: {
+export function VoiceDock(props: {
   state: VoiceState;
   capabilities: VoiceCapabilities;
   errorMessage: string | null;
   disabled: boolean;
-  languageName: string;
   captionsOn: boolean;
   onToggleCaptions: () => void;
-  onStartListening: () => void;
-  onStopListening: () => void;
   onSendTranscript: () => void;
   onTryAgain: () => void;
   onDiscard: () => void;
@@ -76,44 +73,32 @@ export function VoicePanel(props: {
   const ttsOff = !capabilities.textToSpeech;
   const speedLabel =
     SPEEDS.find((item) => item.id === state.speed)?.label ?? "Normal";
+  const listening = state.status === "listening";
 
   return (
-    <section aria-label="Voice conversation" className="flex flex-col gap-5">
+    <section aria-label="Voice conversation" className="flex flex-col gap-3">
       {sttOff ? (
         <p className="text-center text-sm text-stone-500">
-          {VOICE_UNAVAILABLE_MESSAGE} Continue with text.
+          {VOICE_UNAVAILABLE_MESSAGE} You can still type.
         </p>
-      ) : (
-        <>
-          <p className="text-center text-sm text-stone-500">
-            {state.status === "listening"
-              ? "Listening… Tap the mic when you are done."
-              : `Tap to speak. Speak in ${props.languageName}. Take your time.`}
-          </p>
-          <MicrophoneButton
-            state={state}
-            disabled={props.disabled}
-            onStart={props.onStartListening}
-            onStop={props.onStopListening}
-          />
-          <p className="flex items-center justify-center gap-2 text-sm text-stone-500">
-            <span
-              className={[
-                "inline-block h-2 w-2 rounded-full",
-                state.status === "listening"
-                  ? "animate-pulse bg-emerald-500"
-                  : "bg-orbis-gold",
-              ].join(" ")}
-            />
-            {statusLabel(state.status)}
-          </p>
-          {state.interimTranscript ? (
-            <p className="text-center text-sm text-stone-500" aria-live="polite">
-              {state.interimTranscript}
-            </p>
-          ) : null}
-        </>
-      )}
+      ) : listening || state.interimTranscript ? (
+        <p className="flex items-center justify-center gap-2 text-sm text-stone-500">
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+          {listening
+            ? "Listening… Tap the mic when you are done."
+            : statusLabel(state.status)}
+        </p>
+      ) : state.status === "responding" ? (
+        <p className="text-center text-sm text-stone-500" aria-live="polite">
+          Thinking…
+        </p>
+      ) : null}
+
+      {state.interimTranscript ? (
+        <p className="text-center text-sm text-stone-500" aria-live="polite">
+          {state.interimTranscript}
+        </p>
+      ) : null}
 
       {ttsOff ? (
         <p className="text-center text-sm text-stone-500">
@@ -201,12 +186,6 @@ export function VoicePanel(props: {
         </div>
       ) : null}
 
-      {state.status === "responding" ? (
-        <p className="text-center text-sm text-stone-500" aria-live="polite">
-          Thinking…
-        </p>
-      ) : null}
-
       {props.errorMessage ? (
         <p className="text-center text-sm text-red-600" role="alert">
           {props.errorMessage}
@@ -215,6 +194,50 @@ export function VoicePanel(props: {
 
       <p className="sr-only">{MICROPHONE_EXPLANATION}</p>
     </section>
+  );
+}
+
+export function ComposerMicButton({
+  state,
+  disabled,
+  onStart,
+  onStop,
+}: {
+  state: VoiceState;
+  disabled: boolean;
+  onStart: () => void;
+  onStop: () => void;
+}) {
+  const listening = state.status === "listening";
+  const busy =
+    disabled ||
+    state.status === "requesting_permission" ||
+    state.status === "processing" ||
+    state.status === "responding";
+
+  return (
+    <button
+      type="button"
+      onClick={() => (listening ? onStop() : onStart())}
+      disabled={busy && !listening}
+      aria-pressed={listening}
+      aria-label={
+        listening ? "Stop listening" : "Start speaking to the character"
+      }
+      className={[
+        "relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-white shadow-sm",
+        listening ? "orbis-mic-live bg-emerald-500" : "bg-orbis-gold",
+        busy && !listening ? "opacity-60" : "",
+      ].join(" ")}
+    >
+      {listening ? (
+        <>
+          <span className="orbis-mic-wave" aria-hidden />
+          <span className="orbis-mic-wave orbis-mic-wave-delay" aria-hidden />
+        </>
+      ) : null}
+      <MicIcon className="relative z-10 h-5 w-5" />
+    </button>
   );
 }
 
@@ -247,58 +270,5 @@ function ControlChip({
       {icon}
       {label}
     </button>
-  );
-}
-
-function MicrophoneButton({
-  state,
-  disabled,
-  onStart,
-  onStop,
-}: {
-  state: VoiceState;
-  disabled: boolean;
-  onStart: () => void;
-  onStop: () => void;
-}) {
-  const listening = state.status === "listening";
-  const busy =
-    disabled ||
-    state.status === "requesting_permission" ||
-    state.status === "processing" ||
-    state.status === "responding";
-
-  return (
-    <div className="flex justify-center py-2">
-      <button
-        type="button"
-        onClick={() => (listening ? onStop() : onStart())}
-        disabled={busy && !listening}
-        aria-pressed={listening}
-        aria-label={
-          listening ? "Stop listening" : "Start speaking to the character"
-        }
-        className={[
-          "relative flex h-28 w-28 items-center justify-center rounded-full",
-          listening ? "orbis-mic-live text-white" : "orbis-mic-ring text-white",
-          busy && !listening ? "opacity-60" : "",
-        ].join(" ")}
-      >
-        {listening ? (
-          <>
-            <span className="orbis-mic-wave" aria-hidden />
-            <span className="orbis-mic-wave orbis-mic-wave-delay" aria-hidden />
-          </>
-        ) : null}
-        <span
-          className={[
-            "relative z-10 flex h-20 w-20 items-center justify-center rounded-full shadow-lg",
-            listening ? "bg-emerald-500" : "bg-orbis-gold",
-          ].join(" ")}
-        >
-          <MicIcon className="h-8 w-8 text-white" />
-        </span>
-      </button>
-    </div>
   );
 }
