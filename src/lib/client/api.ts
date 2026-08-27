@@ -68,6 +68,7 @@ export type PublicTurn = {
   id: string;
   role: "user" | "character" | "system";
   text: string;
+  translationEn?: string;
   inputMode?: "text" | "voice";
   createdAt: string;
 };

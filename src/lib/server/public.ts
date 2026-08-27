@@ -95,6 +95,7 @@ export function toPublicSession(session: Session) {
       id: turn.id,
       role: turn.role,
       text: turn.text,
+      translationEn: turn.translationEn,
       inputMode: turn.role === "user" ? turn.inputType : undefined,
       createdAt: turn.createdAt,
     })),

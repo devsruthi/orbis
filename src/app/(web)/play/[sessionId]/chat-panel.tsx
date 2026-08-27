@@ -39,7 +39,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   const [loading, setLoading] = useState(true);
   const [timedOut, setTimedOut] = useState(false);
   const [pollNonce, setPollNonce] = useState(0);
-  const [captionsOn, setCaptionsOn] = useState(true);
+  const [translationsOn, setTranslationsOn] = useState(true);
   const bottom = useRef<HTMLDivElement>(null);
   const polls = useRef(0);
   const sendingRef = useRef(false);
@@ -57,6 +57,16 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   useEffect(() => {
     sessionRef.current = session;
   }, [session]);
+
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem("orbis.englishTranslation") === "off") {
+        setTranslationsOn(false);
+      }
+    } catch {
+      // Ignore missing storage.
+    }
+  }, []);
 
   const voice = useVoiceConversation({
     language: session?.language ?? "de",
@@ -324,12 +334,40 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
             {session.character.role.en ? ` (${session.character.role.en})` : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex min-h-10 items-center gap-2 rounded-full border border-stone-200 bg-white px-3 text-sm dark:border-zinc-700 dark:bg-zinc-900">
             <GlobeIcon className="h-4 w-4 text-stone-400" />
             {session.language.toUpperCase()}
           </span>
           <LevelBadge level={session.level} />
+          {session.language !== "en" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setTranslationsOn((value) => {
+                  const next = !value;
+                  try {
+                    window.localStorage.setItem(
+                      "orbis.englishTranslation",
+                      next ? "on" : "off",
+                    );
+                  } catch {
+                    // Ignore missing storage.
+                  }
+                  return next;
+                });
+              }}
+              aria-pressed={translationsOn}
+              className={[
+                "inline-flex min-h-10 cursor-pointer items-center rounded-full border px-3 text-sm",
+                translationsOn
+                  ? "border-orbis-gold bg-orbis-gold/15 text-orbis-gold-deep"
+                  : "border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-900",
+              ].join(" ")}
+            >
+              English · {translationsOn ? "On" : "Off"}
+            </button>
+          ) : null}
         </div>
       </header>
 
@@ -385,11 +423,14 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
                       {session.character.name}
                     </p>
                   ) : null}
-                  {turn.role !== "user" && !captionsOn ? (
-                    <p className="text-stone-400">Captions off</p>
-                  ) : (
-                    <p className="whitespace-pre-wrap break-words">{turn.text}</p>
-                  )}
+                  <p className="whitespace-pre-wrap break-words">{turn.text}</p>
+                  {turn.role !== "user" &&
+                  translationsOn &&
+                  turn.translationEn ? (
+                    <p className="mt-1.5 text-xs leading-relaxed text-stone-500 dark:text-zinc-400">
+                      {turn.translationEn}
+                    </p>
+                  ) : null}
                 </div>
                 {turn.role !== "user" && voice.capabilities.textToSpeech ? (
                   <PlayMessageButton
@@ -504,8 +545,6 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
             capabilities={voice.capabilities}
             errorMessage={voice.errorMessage}
             disabled={composerBusy}
-            captionsOn={captionsOn}
-            onToggleCaptions={() => setCaptionsOn((value) => !value)}
             onSendTranscript={(text) => void voice.sendTranscript(text)}
             onEditTranscript={voice.editTranscript}
             onTryAgain={() => void voice.tryAgain()}

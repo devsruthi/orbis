@@ -125,15 +125,6 @@ export function SpeakerIcon(props: IconProps) {
   );
 }
 
-export function CaptionsIcon(props: IconProps) {
-  return (
-    <Icon {...props}>
-      <rect x="3" y="6" width="18" height="12" rx="2" />
-      <path d="M7 14h3M14 14h3" />
-    </Icon>
-  );
-}
-
 export function SunIcon(props: IconProps) {
   return (
     <Icon {...props}>

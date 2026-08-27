@@ -10,7 +10,6 @@ import {
 } from "@/lib/client/voice";
 import type { PublicMessageCheck } from "@/lib/client/api";
 import {
-  CaptionsIcon,
   MicIcon,
   PauseIcon,
   ReplayIcon,
@@ -59,8 +58,6 @@ export function VoiceDock(props: {
   capabilities: VoiceCapabilities;
   errorMessage: string | null;
   disabled: boolean;
-  captionsOn: boolean;
-  onToggleCaptions: () => void;
   onSendTranscript: (text?: string) => void;
   onEditTranscript: (text: string) => void;
   onTryAgain: () => void;
@@ -155,12 +152,6 @@ export function VoiceDock(props: {
               Speed · {speedLabel}
             </button>
           </fieldset>
-          <ControlChip
-            onClick={props.onToggleCaptions}
-            icon={<CaptionsIcon className="h-4 w-4" />}
-            label={`Captions · ${props.captionsOn ? "On" : "Off"}`}
-            pressed={props.captionsOn}
-          />
         </div>
       )}
 
@@ -354,26 +345,18 @@ function ControlChip({
   disabled,
   icon,
   label,
-  pressed,
 }: {
   onClick: () => void;
   disabled?: boolean;
   icon?: ReactNode;
   label: string;
-  pressed?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      aria-pressed={pressed}
-      className={[
-        "inline-flex min-h-10 items-center gap-2 rounded-full border px-3 py-1.5 text-sm disabled:opacity-60",
-        pressed
-          ? "border-orbis-gold bg-orbis-gold/15 text-orbis-gold-deep"
-          : "border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-900",
-      ].join(" ")}
+      className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
     >
       {icon}
       {label}

@@ -347,6 +347,7 @@ export const TurnSchema = z.object({
   id: UuidSchema,
   role: TurnRoleSchema,
   text: z.string().min(1),
+  translationEn: z.string().trim().max(4000).optional(),
   inputType: InputTypeSchema,
   eventId: SlugSchema.optional(),
   createdAt: z.string().min(1),

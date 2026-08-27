@@ -54,6 +54,7 @@ describe("session service", () => {
     expect(created.turns).toHaveLength(1);
     expect(created.turns[0]?.role).toBe("character");
     expect(created.turns[0]?.text).toContain("Besichtigung");
+    expect(created.turns[0]?.translationEn).toBe("Hello.");
     expect(created.turns[0]?.text).not.toBe("Mock character response");
 
     const loaded = await sessions.getSession(created.id);
@@ -77,6 +78,10 @@ describe("session service", () => {
       "Einen Tisch für eine Person, bitte.",
     );
     expect(turn.reply).toBe("Einen Moment, ich bringe die Speisekarte.");
+    expect(
+      turn.session.turns.filter((item) => item.role === "character").at(-1)
+        ?.translationEn,
+    ).toBe("Hello.");
     expect(turn.complete).toBe(false);
     expect(turn.session.turns.map((item) => item.role)).toEqual([
       "character",

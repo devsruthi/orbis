@@ -9,6 +9,7 @@ import {
   ScenarioIdSchema,
   ScoreSchema,
   TurnBodySchema,
+  TurnSchema,
   MessageCheckBodySchema,
   MessageCheckResultSchema,
   UuidSchema,
@@ -79,6 +80,25 @@ describe("Zod validation", () => {
     expect(TurnBodySchema.safeParse({ message: "   " }).success).toBe(false);
     expect(TurnBodySchema.safeParse({ text: "Guten Tag" }).success).toBe(false);
     expect(TurnBodySchema.safeParse({}).success).toBe(false);
+    expect(
+      TurnSchema.parse({
+        id: "11111111-1111-4111-8111-111111111111",
+        role: "character",
+        text: "Guten Tag!",
+        inputType: "text",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      }).translationEn,
+    ).toBeUndefined();
+    expect(
+      TurnSchema.parse({
+        id: "11111111-1111-4111-8111-111111111111",
+        role: "character",
+        text: "Guten Tag!",
+        translationEn: "Good day!",
+        inputType: "text",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      }).translationEn,
+    ).toBe("Good day!");
     expect(
       TurnBodySchema.safeParse({
         message: "Hallo",

@@ -212,7 +212,7 @@ export function createSessionService(
       const opening = await claude.generateOpening(
         buildConversationContext(session),
       );
-      applyCharacterTurn(session, opening.reply, null);
+      applyCharacterTurn(session, opening.reply, null, opening.translationEn);
       return store.createSession(session);
     },
 
@@ -278,7 +278,12 @@ export function createSessionService(
         inputType,
         createdAt: nowIso(),
       });
-      applyCharacterTurn(session, output.reply, event?.id ?? null);
+      applyCharacterTurn(
+        session,
+        output.reply,
+        event?.id ?? null,
+        output.translationEn,
+      );
 
       simulation = applyObjectiveSignals(
         simulation,
@@ -401,6 +406,7 @@ function applyCharacterTurn(
   session: Session,
   reply: string,
   eventId: string | null,
+  translationEn?: string,
 ): void {
   const turn: Turn = {
     id: createId(),
@@ -409,6 +415,10 @@ function applyCharacterTurn(
     inputType: "text",
     createdAt: nowIso(),
   };
+  const english = translationEn?.trim();
+  if (english) {
+    turn.translationEn = english;
+  }
   if (eventId) {
     turn.eventId = eventId;
   }

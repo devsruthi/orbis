@@ -11,6 +11,12 @@ describe("Claude response validation", () => {
       objectiveSignals: [],
       branchChoice: null,
     });
+    expect(
+      CharacterTurnOutputSchema.parse({
+        reply: "Guten Tag!",
+        translationEn: "Good day!",
+      }).translationEn,
+    ).toBe("Good day!");
   });
 
   it("rejects an empty reply", () => {

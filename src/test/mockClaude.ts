@@ -35,6 +35,7 @@ export function createMockClaude(
     index += 1;
     return {
       reply,
+      translationEn: "Hello.",
       suggestedEvent: null,
       objectiveSignals: options.signals ?? [],
       branchChoice: options.branchChoice ?? null,

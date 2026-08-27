@@ -8,6 +8,7 @@ export const ObjectiveSignalSchema = z.object({
 
 export const CharacterTurnOutputSchema = z.object({
   reply: z.string().trim().min(1).max(4000),
+  translationEn: z.string().trim().max(4000).optional(),
   suggestedEvent: z
     .union([z.string().trim().min(1), z.null()])
     .optional()

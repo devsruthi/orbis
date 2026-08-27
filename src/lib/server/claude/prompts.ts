@@ -118,6 +118,8 @@ export function buildSystemPrompt(context: ConversationContext): string {
     "Characters should behave like real people in this situation.",
     "",
     "Use the character_turn tool. Put only spoken in-character dialogue in `reply`.",
+    "Also set `translationEn` to a natural English translation of that spoken line.",
+    "Do not put English in `reply`. Do not speak or mention the translation.",
   ]
     .filter((line) => line !== "")
     .join("\n");

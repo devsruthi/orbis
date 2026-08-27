@@ -64,6 +64,7 @@ describe("Claude conversation service (mocked)", () => {
       expect(messages.at(-1)?.content).toContain("Einen Tisch");
       return {
         reply: "Natürlich, kommen Sie bitte mit.",
+        translationEn: "Of course, please come with me.",
         suggestedEvent: null,
         objectiveSignals: [],
         branchChoice: null,
@@ -78,6 +79,7 @@ describe("Claude conversation service (mocked)", () => {
     );
 
     expect(output.reply).toBe("Natürlich, kommen Sie bitte mit.");
+    expect(output.translationEn).toBe("Of course, please come with me.");
     expect(complete).toHaveBeenCalledOnce();
   });
 

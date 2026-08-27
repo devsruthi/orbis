@@ -88,6 +88,7 @@ describe("conversation context construction", () => {
     expect(prompt).toContain("Frau Keller");
     expect(prompt).toContain("greet_landlord");
     expect(prompt).toContain("Stay in character");
+    expect(prompt).toContain("translationEn");
     expect(prompt).toContain("You are at the apartment door.");
     expect(prompt).not.toContain("available_from_later_date");
     expect(prompt).not.toContain("Mock character response");

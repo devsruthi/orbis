@@ -25,7 +25,12 @@ const CHARACTER_TURN_TOOL: Anthropic.Tool = {
     properties: {
       reply: {
         type: "string",
-        description: "Spoken in-character reply in the target language.",
+        description: "Spoken in-character reply in the target language only.",
+      },
+      translationEn: {
+        type: "string",
+        description:
+          "Natural English translation of the spoken reply for the learner. Not spoken. Not in the target language.",
       },
       suggestedEvent: {
         type: ["string", "null"],
@@ -55,7 +60,7 @@ const CHARACTER_TURN_TOOL: Anthropic.Tool = {
           "Id of an allowed learner choice for the current issue, or null.",
       },
     },
-    required: ["reply"],
+    required: ["reply", "translationEn"],
     additionalProperties: false,
   },
 };
