@@ -21,6 +21,7 @@ import {
 } from "./icons";
 import { PathChips } from "./page-header";
 import { ThemeToggle } from "./theme-toggle";
+import { UserMenu } from "./user-menu";
 
 const LINKS = [
   { href: "/", label: "Dashboard", Icon: HomeIcon },
@@ -75,86 +76,95 @@ function AppShellFrame({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-dvh min-h-0 bg-background text-foreground">
-      <aside className="hidden w-72 shrink-0 flex-col border-r border-stone-200/70 bg-white/80 px-4 py-5 dark:border-zinc-800 dark:bg-zinc-950/40 lg:flex">
-        <Link href="/" className="flex items-center gap-2 px-2 py-1 text-orbis-gold">
-          <OrbitMark className="h-8 w-8" />
-          <span className="font-serif text-2xl tracking-wide text-foreground">
-            ORBIS
-          </span>
-        </Link>
-
-        {learner?.setupComplete ? (
-          <div className="mt-6 rounded-2xl bg-stone-50 px-3 py-3 dark:bg-zinc-900/80">
-            <p className="text-[11px] uppercase tracking-[0.16em] text-stone-400">
-              In progress
-            </p>
-            <div className="mt-2">
-              <PathChips paths={paths} />
-            </div>
-          </div>
-        ) : null}
-
-        <nav aria-label="Main" className="mt-6">
-          <ul className="flex flex-col gap-1">
-            {LINKS.map((link) => (
-              <li key={link.href}>
-                <NavLink
-                  href={link.href}
-                  label={link.label}
-                  pathname={pathname}
-                  Icon={link.Icon}
-                />
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <div className="mt-auto flex flex-col gap-3 pt-6">
-          {recommendation ? (
-            <Link
-              href="/explore"
-              className="overflow-hidden rounded-2xl border border-stone-200/80 bg-stone-50 dark:border-zinc-800 dark:bg-zinc-900/70"
-            >
-              <span className="block h-16 bg-gradient-to-br from-amber-100 via-stone-100 to-emerald-100 dark:from-zinc-800 dark:to-zinc-900" />
-              <span className="block px-3 py-3">
-                <span className="block text-[11px] uppercase tracking-[0.16em] text-stone-400">
-                  Next mission
-                </span>
-                <span className="mt-1 block font-medium leading-tight">
-                  {recommendation.title}
-                </span>
-                <span
-                  className="mt-2 block h-1.5 overflow-hidden rounded-full bg-stone-200 dark:bg-zinc-800"
-                  aria-hidden
-                >
-                  <span
-                    className="block h-full rounded-full bg-orbis-gold"
-                    style={{ width: `${missionProgress}%` }}
-                  />
-                </span>
-              </span>
-            </Link>
-          ) : null}
-
-          <Link
-            href={learner?.setupComplete ? "/explore" : "/"}
-            className="flex items-center gap-3 rounded-2xl bg-orbis-gold/12 px-3 py-3 text-sm text-orbis-gold-deep"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orbis-gold text-white">
-              <MicIcon className="h-4 w-4" />
-            </span>
-            <span>
-              <span className="block font-medium">Voice mode</span>
-              <span className="block text-xs text-stone-500">
-                Speak in a mission.
-              </span>
+      <aside className="hidden h-dvh min-h-0 w-72 shrink-0 flex-col overflow-hidden border-r border-stone-200/70 bg-white/80 dark:border-zinc-800 dark:bg-zinc-950/40 lg:flex">
+        <div className="shrink-0 px-4 pt-5">
+          <Link href="/" className="flex items-center gap-2 px-2 py-1 text-orbis-gold">
+            <OrbitMark className="h-8 w-8" />
+            <span className="font-serif text-2xl tracking-wide text-foreground">
+              ORBIS
             </span>
           </Link>
 
-          <div className="flex items-center justify-between px-1">
-            <ThemeToggle />
+          {learner?.setupComplete ? (
+            <div className="mt-6 rounded-2xl bg-stone-50 px-3 py-3 dark:bg-zinc-900/80">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-stone-400">
+                In progress
+              </p>
+              <div className="mt-2">
+                <PathChips paths={paths} />
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4">
+          <nav aria-label="Main" className="mt-6">
+            <ul className="flex flex-col gap-1">
+              {LINKS.map((link) => (
+                <li key={link.href}>
+                  <NavLink
+                    href={link.href}
+                    label={link.label}
+                    pathname={pathname}
+                    Icon={link.Icon}
+                  />
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div className="mt-6 flex flex-col gap-3 pb-4">
+            {recommendation ? (
+              <Link
+                href="/explore"
+                className="overflow-hidden rounded-2xl border border-stone-200/80 bg-stone-50 dark:border-zinc-800 dark:bg-zinc-900/70"
+              >
+                <span className="block h-16 bg-gradient-to-br from-amber-100 via-stone-100 to-emerald-100 dark:from-zinc-800 dark:to-zinc-900" />
+                <span className="block px-3 py-3">
+                  <span className="block text-[11px] uppercase tracking-[0.16em] text-stone-400">
+                    Next mission
+                  </span>
+                  <span className="mt-1 block font-medium leading-tight">
+                    {recommendation.title}
+                  </span>
+                  <span
+                    className="mt-2 block h-1.5 overflow-hidden rounded-full bg-stone-200 dark:bg-zinc-800"
+                    aria-hidden
+                  >
+                    <span
+                      className="block h-full rounded-full bg-orbis-gold"
+                      style={{ width: `${missionProgress}%` }}
+                    />
+                  </span>
+                </span>
+              </Link>
+            ) : null}
+
+            <Link
+              href={learner?.setupComplete ? "/explore" : "/"}
+              className="flex items-center gap-3 rounded-2xl bg-orbis-gold/12 px-3 py-3 text-sm text-orbis-gold-deep"
+            >
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orbis-gold text-white">
+                <MicIcon className="h-4 w-4" />
+              </span>
+              <span>
+                <span className="block font-medium">Voice mode</span>
+                <span className="block text-xs text-stone-500">
+                  Speak in a mission.
+                </span>
+              </span>
+            </Link>
           </div>
-          <p className="px-1 text-[11px] text-stone-400">Made with care by Orbis.</p>
+        </div>
+
+        <div className="shrink-0 border-t border-stone-200/70 px-4 py-4 dark:border-zinc-800">
+          <div className="flex flex-col gap-3">
+            <UserMenu />
+            <div className="flex items-center justify-between px-1">
+              <ThemeToggle />
+            </div>
+            <p className="px-1 text-[11px] text-stone-400">Made with care by Orbis.</p>
+          </div>
         </div>
       </aside>
 
@@ -167,7 +177,12 @@ function AppShellFrame({ children }: { children: ReactNode }) {
                 ORBIS
               </span>
             </Link>
-            {learner?.setupComplete ? <PathChips paths={paths} /> : null}
+            <div className="flex min-w-0 items-center gap-2">
+              {learner?.setupComplete ? <PathChips paths={paths} /> : null}
+              <div className="max-w-44 shrink-0">
+                <UserMenu compact />
+              </div>
+            </div>
           </div>
         </header>
 

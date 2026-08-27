@@ -77,9 +77,16 @@ function useDashboardState(): DashboardState {
         void load(true);
       }
     });
+    const onAuthSynced = () => {
+      if (!cancelled) {
+        void load(true);
+      }
+    };
+    window.addEventListener("orbis:auth-synced", onAuthSynced);
     return () => {
       cancelled = true;
       stopResume();
+      window.removeEventListener("orbis:auth-synced", onAuthSynced);
     };
   }, [load]);
 

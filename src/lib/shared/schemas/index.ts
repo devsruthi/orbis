@@ -540,6 +540,10 @@ export const LearnerProfileSchema = z.object({
   lastPracticeAt: z.string().optional(),
   lastReviewSyncEvaluationId: UuidSchema.optional(),
   preferencesChosenAt: z.string().optional(),
+  displayName: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  image: z.string().url().optional(),
+  authProviderId: z.string().min(1).optional(),
   languagePaths: z
     .array(
       z.object({
@@ -641,6 +645,7 @@ export const DashboardLearnerSchema = z.object({
   level: CefrLevelSchema,
   worldId: WorldIdSchema,
   setupComplete: z.boolean(),
+  name: z.string().min(1).optional(),
 });
 
 export const DashboardSummarySchema = z.object({

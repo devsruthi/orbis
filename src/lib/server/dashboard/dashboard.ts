@@ -121,6 +121,7 @@ export async function getLearnerDashboard(
       level,
       worldId,
       setupComplete: Boolean(learner?.preferencesChosenAt),
+      name: learner?.displayName,
     },
     summary: {
       completedSessions: completed.length,

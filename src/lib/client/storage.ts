@@ -22,6 +22,19 @@ export function readLearnerId(
   return storage.getItem(LEARNER_ID_STORAGE_KEY);
 }
 
+export function setLearnerId(
+  id: string,
+  storage: ClientStorage = browserStorage(),
+): void {
+  storage.setItem(LEARNER_ID_STORAGE_KEY, id);
+}
+
+export function clearLearnerId(
+  storage: ClientStorage = browserStorage(),
+): void {
+  storage.removeItem?.(LEARNER_ID_STORAGE_KEY);
+}
+
 function storageOrNull(): ClientStorage | null {
   try {
     return browserStorage();
