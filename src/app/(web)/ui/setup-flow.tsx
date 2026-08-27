@@ -8,11 +8,13 @@ import { NetworkError, userFacingRequestError } from "@/lib/client/network";
 import {
   LEARNING_LANGUAGES,
   LEARNING_LEVELS,
+  defaultLevelFor,
   isLanguageReady,
   isLevelReady,
   type LearningLanguageOption,
 } from "@/lib/shared/learning-options";
 import type { CefrLevel } from "@/lib/shared/cefr";
+import { PRIMARY_BUTTON } from "./page-header";
 
 const LANGUAGE_TONE: Record<string, string> = {
   de: "from-amber-100/90 to-orange-50/40",
@@ -27,6 +29,7 @@ export function SetupFlow(props: {
   currentLanguage?: string;
   currentLevel?: string;
   wizard?: boolean;
+  compact?: boolean;
   onSaved: () => Promise<void> | void;
 }) {
   const [step, setStep] = useState<"language" | "level">("language");
@@ -72,9 +75,11 @@ export function SetupFlow(props: {
       setLevel("");
       return;
     }
-    if (level && !isLevelReady(option.code, level as CefrLevel)) {
-      setLevel("");
-    }
+    const nextLevel =
+      level && isLevelReady(option.code, level as CefrLevel)
+        ? (level as CefrLevel)
+        : defaultLevelFor(option.code);
+    setLevel(nextLevel ?? "");
     if (props.wizard) {
       setStep("level");
     }
@@ -86,14 +91,14 @@ export function SetupFlow(props: {
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-stone-500">
           1 · Language
         </p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight">
+        <h2 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
           Which language do you want to live in?
         </h2>
         <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
           Pick a world first. Then you will choose a CEFR level.
         </p>
       </div>
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {LEARNING_LANGUAGES.map((option) => {
           const selectedCard = language === option.code;
           return (
@@ -103,7 +108,7 @@ export function SetupFlow(props: {
                 onClick={() => chooseLanguage(option)}
                 aria-pressed={selectedCard}
                 className={[
-                  "flex min-h-32 w-full flex-col items-start rounded-3xl bg-gradient-to-br p-4 text-left transition",
+                  "flex min-h-28 w-full flex-col items-start rounded-3xl bg-gradient-to-br p-4 text-left transition sm:min-h-32",
                   LANGUAGE_TONE[option.code] ?? "from-stone-100 to-white",
                   selectedCard
                     ? "ring-2 ring-[#c45c26] ring-offset-2 ring-offset-[#f3eee4]"
@@ -153,18 +158,18 @@ export function SetupFlow(props: {
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-stone-500">
           2 · Level
         </p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight">
+        <h2 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
           What is your level?
         </h2>
         <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
-          CEFR controls how the character speaks. It does not change after you
-          start a mission.
+          New learners start at A1. You can move up whenever you are ready.
         </p>
       </div>
       <ul className="flex flex-col gap-2">
         {LEARNING_LEVELS.map((option) => {
           const ready = Boolean(language && isLevelReady(language, option.id));
           const selectedCard = level === option.id;
+          const basic = option.id === "A1";
           return (
             <li key={option.id}>
               <button
@@ -188,13 +193,18 @@ export function SetupFlow(props: {
                 <span>
                   <span className="font-medium">
                     {option.id} · {option.title}
+                    {basic ? (
+                      <span className="ml-2 text-xs font-normal uppercase tracking-wide text-[#c45c26]">
+                        Start here
+                      </span>
+                    ) : null}
                   </span>
                   <span className="mt-0.5 block text-sm text-stone-500">
                     {ready ? option.blurb : "Coming soon for this language"}
                   </span>
                 </span>
                 {selectedCard ? (
-                  <span className="text-sm text-[#c45c26]">Selected</span>
+                  <span className="shrink-0 text-sm text-[#c45c26]">Selected</span>
                 ) : null}
               </button>
             </li>
@@ -210,10 +220,99 @@ export function SetupFlow(props: {
     isLanguageReady(language) &&
     isLevelReady(language, level as CefrLevel);
 
+  if (props.compact) {
+    return (
+      <section className="flex flex-col gap-4 rounded-3xl bg-white/85 p-4 shadow-sm shadow-stone-900/5 dark:bg-zinc-900/75 sm:p-5">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-stone-500">
+            Your path
+          </p>
+          <h2 className="mt-1 text-lg font-semibold">Language and level</h2>
+        </div>
+        <div className="-mx-1 overflow-x-auto pb-1">
+          <ul className="flex min-w-min gap-2 px-1">
+            {LEARNING_LANGUAGES.map((option) => {
+              const selectedCard = language === option.code;
+              return (
+                <li key={option.code}>
+                  <button
+                    type="button"
+                    onClick={() => chooseLanguage(option)}
+                    aria-pressed={selectedCard}
+                    className={[
+                      "flex min-h-11 items-center gap-2 rounded-full px-3 py-2 text-sm whitespace-nowrap",
+                      selectedCard
+                        ? "bg-[#3d2a22] text-white"
+                        : "bg-stone-100 text-stone-700 dark:bg-zinc-800 dark:text-zinc-200",
+                      option.available ? "" : "opacity-60",
+                    ].join(" ")}
+                  >
+                    <span aria-hidden>{languageFlag(option.code)}</span>
+                    {option.name}
+                    {option.available ? null : (
+                      <span className="text-[11px] uppercase tracking-wide">Soon</span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        {selected?.available ? (
+          <div className="-mx-1 overflow-x-auto pb-1">
+            <ul className="flex min-w-min gap-2 px-1">
+              {LEARNING_LEVELS.map((option) => {
+                const ready = isLevelReady(language, option.id);
+                const selectedCard = level === option.id;
+                return (
+                  <li key={option.id}>
+                    <button
+                      type="button"
+                      onClick={() => ready && setLevel(option.id)}
+                      disabled={!ready}
+                      aria-pressed={selectedCard}
+                      className={[
+                        "min-h-11 rounded-full px-3 py-2 text-sm whitespace-nowrap",
+                        selectedCard
+                          ? "bg-[#c45c26] text-white"
+                          : "border border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-900",
+                        ready ? "" : "opacity-50",
+                      ].join(" ")}
+                    >
+                      {option.id}
+                      {option.id === "A1" ? " · Basic" : ""}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ) : null}
+        {selected && !selected.available ? (
+          <p className="text-sm text-stone-600 dark:text-zinc-400">
+            {selected.name} is coming soon. German is ready today.
+          </p>
+        ) : null}
+        {canSave &&
+        (language !== props.currentLanguage || level !== props.currentLevel) ? (
+          <button
+            type="button"
+            onClick={() => void save()}
+            disabled={saving}
+            className={`${PRIMARY_BUTTON} self-start`}
+          >
+            {saving ? "Saving…" : "Save path"}
+          </button>
+        ) : null}
+        {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      </section>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8">
       {props.wizard ? (
-        <ol className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-stone-400">
+        <ol className="flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-stone-400">
           <li className={step === "language" ? "text-[#c45c26]" : ""}>
             1 Language
           </li>
@@ -240,7 +339,7 @@ export function SetupFlow(props: {
         <button
           type="button"
           onClick={() => setStep("level")}
-          className="self-start rounded-full bg-[#c45c26] px-5 py-2.5 text-sm text-white"
+          className={`${PRIMARY_BUTTON} w-full sm:w-auto`}
         >
           Continue to level
         </button>
@@ -250,7 +349,7 @@ export function SetupFlow(props: {
           type="button"
           onClick={() => void save()}
           disabled={saving}
-          className="self-start rounded-full bg-[#c45c26] px-5 py-2.5 text-sm text-white disabled:opacity-60"
+          className={`${PRIMARY_BUTTON} w-full sm:w-auto`}
         >
           {saving ? "Saving…" : props.wizard ? "Enter the world" : "Save"}
         </button>

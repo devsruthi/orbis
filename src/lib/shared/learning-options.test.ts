@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  defaultLevelFor,
   isLanguageReady,
   isLevelReady,
   languageOption,
@@ -16,5 +17,6 @@ describe("learning options", () => {
     expect(isLanguageReady("fr")).toBe(false);
     expect(isLevelReady("fr", "A2")).toBe(false);
     expect(languageOption("de")?.worldId).toBe("germany");
+    expect(defaultLevelFor("de")).toBe("A1");
   });
 });

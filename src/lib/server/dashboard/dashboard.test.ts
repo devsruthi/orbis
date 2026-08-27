@@ -63,7 +63,7 @@ describe("dashboard aggregation", () => {
     expect(dashboard.recommendations[0]?.scenarioId).toBe("apartment_viewing");
     expect(dashboard.learner.setupComplete).toBe(false);
     expect(dashboard.learner.language).toBe("de");
-    expect(dashboard.learner.level).toBe("A2");
+    expect(dashboard.learner.level).toBe("A1");
     expect(
       dashboard.categories.flatMap((category) => category.scenarios).filter(
         (scenario) => scenario.status === "enabled",

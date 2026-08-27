@@ -74,7 +74,7 @@ export const LEARNING_LANGUAGES: LearningLanguageOption[] = [
 ];
 
 export const LEARNING_LEVELS: LearningLevelOption[] = [
-  { id: "A1", title: "Beginner", blurb: "First words and simple needs." },
+  { id: "A1", title: "Beginner", blurb: "Start here. First words and simple needs." },
   { id: "A2", title: "Elementary", blurb: "Short, real conversations." },
   { id: "B1", title: "Intermediate", blurb: "Handle most everyday situations." },
   { id: "B2", title: "Upper intermediate", blurb: "More natural, detailed talk." },
@@ -84,6 +84,8 @@ export const LEARNING_LEVELS: LearningLevelOption[] = [
 const READY_LEVELS: Record<string, CefrLevel[]> = {
   de: [...CEFR_LEVELS],
 };
+
+export const DEFAULT_CEFR_LEVEL: CefrLevel = "A1";
 
 export function languageOption(code: string): LearningLanguageOption | null {
   return LEARNING_LANGUAGES.find((item) => item.code === code) ?? null;
@@ -99,6 +101,10 @@ export function isLevelReady(language: string, level: CefrLevel): boolean {
 
 export function readyLevelsFor(language: string): CefrLevel[] {
   return READY_LEVELS[language] ?? [];
+}
+
+export function defaultLevelFor(language: string): CefrLevel | null {
+  return readyLevelsFor(language)[0] ?? null;
 }
 
 export { CEFR_LEVELS };

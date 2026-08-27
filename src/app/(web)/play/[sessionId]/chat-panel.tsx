@@ -209,11 +209,15 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   }
 
   if (loading) {
-    return <p className="p-6">Loading session…</p>;
+    return <p className="text-sm text-stone-500">Opening the scene…</p>;
   }
 
   if (!session) {
-    return <p className="p-6 text-red-600">{error ?? "Session not found."}</p>;
+    return (
+      <p className="rounded-3xl bg-white/85 p-5 text-red-700">
+        {error ?? "Session not found."}
+      </p>
+    );
   }
 
   const missionStatus = session.simulation?.status;
@@ -228,7 +232,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
 
   return (
     <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4">
-      <header className="rounded-[1.75rem] bg-gradient-to-br from-[#3d2a22] to-[#2d4a3c] px-5 py-5 text-white">
+      <header className="orbis-hero rounded-[1.75rem] px-4 py-5 text-white sm:px-5">
         <p className="text-sm text-white/70">
           <Link href="/" className="underline">
             Orbis
@@ -239,7 +243,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
         {session.location ? (
           <p className="mt-1 text-sm text-white/70">{session.location.name.en}</p>
         ) : null}
-        <h1 className="mt-2 text-2xl font-semibold">{session.character.name}</h1>
+        <h1 className="mt-2 text-xl font-semibold sm:text-2xl">{session.character.name}</h1>
         <p className="text-sm text-white/80">
           {session.character.role.en}
         </p>
@@ -320,7 +324,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
             type="button"
             onClick={() => void onComplete()}
             disabled={completing}
-            className="mt-3 rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white disabled:opacity-60"
+            className="mt-3 min-h-11 w-full rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white disabled:opacity-60 sm:w-auto"
           >
             {completing ? "Starting…" : "See how you did"}
           </button>
@@ -337,7 +341,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
             type="button"
             onClick={() => void onComplete()}
             disabled={completing}
-            className="mt-3 rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white disabled:opacity-60"
+            className="mt-3 min-h-11 w-full rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white disabled:opacity-60 sm:w-auto"
           >
             {completing ? "Starting…" : "Continue to evaluation"}
           </button>
@@ -362,11 +366,11 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
             className="min-h-[5.5rem] w-full rounded-2xl border border-stone-300 bg-white/80 p-3 dark:border-zinc-700 dark:bg-zinc-950"
             disabled={sending || completing}
           />
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <button
               type="submit"
               disabled={sending || completing}
-              className="min-h-11 min-w-20 rounded-full bg-[#c45c26] px-4 py-2 text-white disabled:opacity-60"
+              className="min-h-11 w-full rounded-full bg-[#c45c26] px-4 py-2 text-white disabled:opacity-60 sm:w-auto sm:min-w-20"
             >
               {sending ? "Sending…" : "Send"}
             </button>
@@ -374,7 +378,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
               type="button"
               onClick={() => void onComplete()}
               disabled={sending || completing}
-              className="min-h-11 rounded-full border border-stone-300 px-4 py-2 disabled:opacity-60 dark:border-zinc-700"
+              className="min-h-11 w-full rounded-full border border-stone-300 px-4 py-2 disabled:opacity-60 sm:w-auto dark:border-zinc-700"
             >
               {completing ? "Starting…" : "Complete session"}
             </button>
@@ -438,7 +442,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
             type="button"
             onClick={() => void onComplete()}
             disabled={completing}
-            className="mt-3 rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white disabled:opacity-60"
+            className="mt-3 min-h-11 w-full rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white disabled:opacity-60 sm:w-auto"
           >
             {completing ? "Retrying…" : "Retry analysis"}
           </button>

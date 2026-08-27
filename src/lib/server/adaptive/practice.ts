@@ -24,7 +24,7 @@ export async function getPracticeForLearner(
     : [];
   const worldId = learner?.worldId ?? "germany";
   const language = learner?.targetLanguage ?? "de";
-  const level = learner?.cefrLevel ?? "A2";
+  const level = learner?.cefrLevel ?? "A1";
   const recommendation = recommendNextPractice({
     scenarios: listScenarios(worldId),
     reviewItems: items,

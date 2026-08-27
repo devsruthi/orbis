@@ -12,6 +12,7 @@ import {
 } from "@/lib/client/labels";
 import { ErrorState, PageSkeleton } from "../ui/states";
 import { SetupFlow } from "../ui/setup-flow";
+import { PageHeader, PRIMARY_BUTTON } from "../ui/page-header";
 import type { DashboardResponse } from "@/lib/shared/models";
 
 const CATEGORY_TONE: Record<string, string> = {
@@ -46,20 +47,28 @@ export function ExploreView() {
   if (!data.learner.setupComplete) {
     return (
       <div className="flex flex-col gap-6">
-        <header className="flex flex-col gap-2">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Choose a language first
-          </h1>
-          <p className="text-stone-600 dark:text-zinc-400">
-            Orbis starts with a language, then a CEFR level, then a mission.
-          </p>
-        </header>
+        <PageHeader
+          title="Choose a language first"
+          body="Orbis starts with a language, then a beginner CEFR level, then a mission."
+        />
         <SetupFlow wizard onSaved={() => reload()} />
       </div>
     );
   }
 
   const learner = data.learner;
+  const readyCategories = data.categories
+    .map((category) => ({
+      ...category,
+      scenarios: category.scenarios.filter((scenario) => scenario.status === "enabled"),
+    }))
+    .filter((category) => category.scenarios.length > 0);
+  const laterCategories = data.categories
+    .map((category) => ({
+      ...category,
+      scenarios: category.scenarios.filter((scenario) => scenario.status !== "enabled"),
+    }))
+    .filter((category) => category.scenarios.length > 0);
 
   async function start(scenario: DashboardResponse["categories"][number]["scenarios"][number]) {
     if (scenario.status !== "enabled") {
@@ -83,73 +92,105 @@ export function ExploreView() {
 
   return (
     <div className="flex min-w-0 flex-col gap-10">
-      <header className="flex flex-col gap-2">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-stone-500">
-          {data.learner.languageName} · {data.learner.level}
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight">Explore</h1>
-        <p className="text-stone-600 dark:text-zinc-400">
-          Step into everyday {data.learner.languageName} life. Ready scenes can
-          start now; the rest of the world is on the way.
-        </p>
-        {startError ? <p className="text-sm text-red-700">{startError}</p> : null}
-      </header>
+      <PageHeader
+        kicker={`${data.learner.languageName} · ${data.learner.level}`}
+        title="Explore"
+        body={`Step into everyday ${data.learner.languageName} life. Ready scenes can start now.`}
+      />
+      {startError ? <p className="text-sm text-red-700">{startError}</p> : null}
 
-      {data.categories.map((category) => (
-        <section key={category.id} className="flex min-w-0 flex-col gap-4">
-          <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
-            {categoryMark(category.id)}
-          </h2>
-          <ul className="flex flex-col gap-4">
-            {category.scenarios.map((scenario) => (
-              <li
-                key={scenario.id}
-                className={[
-                  "min-w-0 rounded-3xl bg-gradient-to-br p-5",
-                  CATEGORY_TONE[category.id] ?? "from-stone-100 to-white",
-                  "dark:from-zinc-900 dark:to-zinc-950",
-                ].join(" ")}
-              >
-                <p className="text-lg font-medium">{scenario.title}</p>
-                <p className="text-sm text-stone-500">
-                  {scenario.language.toUpperCase()} · {scenario.level}
-                  {scenario.estimatedMinutes
-                    ? ` · about ${scenario.estimatedMinutes} min`
-                    : ""}
-                </p>
-                {scenario.summary ? (
-                  <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
-                    {scenario.summary}
-                  </p>
-                ) : null}
-                {scenario.supportedConcepts.length > 0 ? (
-                  <p className="mt-2 text-sm text-stone-500">
-                    Practice:{" "}
-                    {scenario.supportedConcepts.map(humanizeConcept).join(" · ")}
-                  </p>
-                ) : null}
-                <p className="mt-2 text-sm text-stone-500">
-                  {scenario.status === "coming_soon"
-                    ? "Coming soon"
-                    : scenario.completedCount > 0
-                      ? `${attemptStatusLabel(scenario.attemptStatus)} · ${scenario.completedCount} ${scenario.completedCount === 1 ? "time" : "times"}`
-                      : attemptStatusLabel(scenario.attemptStatus)}
-                </p>
-                {scenario.status === "enabled" ? (
-                  <button
-                    type="button"
-                    onClick={() => void start(scenario)}
-                    disabled={pendingId !== null}
-                    className="mt-3 rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white disabled:opacity-60"
-                  >
-                    {pendingId === scenario.id ? "Starting…" : "Enter scene"}
-                  </button>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </section>
+      {readyCategories.map((category) => (
+        <CategorySection
+          key={category.id}
+          category={category}
+          pendingId={pendingId}
+          onStart={start}
+        />
       ))}
+
+      {laterCategories.length > 0 ? (
+        <div className="flex flex-col gap-8 opacity-80">
+          <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
+            Coming later
+          </h2>
+          {laterCategories.map((category) => (
+            <CategorySection
+              key={category.id}
+              category={category}
+              pendingId={pendingId}
+              onStart={start}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+function CategorySection({
+  category,
+  pendingId,
+  onStart,
+}: {
+  category: DashboardResponse["categories"][number];
+  pendingId: string | null;
+  onStart: (
+    scenario: DashboardResponse["categories"][number]["scenarios"][number],
+  ) => void;
+}) {
+  return (
+    <section className="flex min-w-0 flex-col gap-4">
+      <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
+        {categoryMark(category.id)}
+      </h2>
+      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {category.scenarios.map((scenario) => (
+          <li
+            key={scenario.id}
+            className={[
+              "flex min-w-0 flex-col rounded-3xl bg-gradient-to-br p-5",
+              CATEGORY_TONE[category.id] ?? "from-stone-100 to-white",
+              "dark:from-zinc-900 dark:to-zinc-950",
+            ].join(" ")}
+          >
+            <p className="text-lg font-medium">{scenario.title}</p>
+            <p className="text-sm text-stone-500">
+              {scenario.language.toUpperCase()} · {scenario.level}
+              {scenario.estimatedMinutes
+                ? ` · about ${scenario.estimatedMinutes} min`
+                : ""}
+            </p>
+            {scenario.summary ? (
+              <p className="mt-1 flex-1 text-sm text-stone-600 dark:text-zinc-400">
+                {scenario.summary}
+              </p>
+            ) : null}
+            {scenario.supportedConcepts.length > 0 ? (
+              <p className="mt-2 text-sm text-stone-500">
+                Practice:{" "}
+                {scenario.supportedConcepts.map(humanizeConcept).join(" · ")}
+              </p>
+            ) : null}
+            <p className="mt-2 text-sm text-stone-500">
+              {scenario.status === "coming_soon"
+                ? "Coming soon"
+                : scenario.completedCount > 0
+                  ? `${attemptStatusLabel(scenario.attemptStatus)} · ${scenario.completedCount} ${scenario.completedCount === 1 ? "time" : "times"}`
+                  : attemptStatusLabel(scenario.attemptStatus)}
+            </p>
+            {scenario.status === "enabled" ? (
+              <button
+                type="button"
+                onClick={() => onStart(scenario)}
+                disabled={pendingId !== null}
+                className={`${PRIMARY_BUTTON} mt-4 w-full`}
+              >
+                {pendingId === scenario.id ? "Starting…" : "Enter scene"}
+              </button>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

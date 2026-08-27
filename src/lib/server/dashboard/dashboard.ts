@@ -4,6 +4,7 @@ import {
   listCategories,
   listScenarios,
 } from "@/content";
+import { DEFAULT_CEFR_LEVEL } from "@/lib/shared/learning-options";
 import { getPracticeForLearner } from "@/lib/server/adaptive/practice";
 import { getPersistence, type Persistence } from "@/lib/server/persistence";
 import { z } from "zod";
@@ -36,7 +37,7 @@ export async function getLearnerDashboard(
   const learner = await store.getLearner(learnerId);
   const worldId = learner?.worldId ?? "germany";
   const language = learner?.targetLanguage ?? "de";
-  const level = learner?.cefrLevel ?? "A2";
+  const level = learner?.cefrLevel ?? DEFAULT_CEFR_LEVEL;
   const languageName = getLanguage(language)?.displayName.en ?? language;
 
   const [sessions, reviewItems, exercises, practice] = await Promise.all([

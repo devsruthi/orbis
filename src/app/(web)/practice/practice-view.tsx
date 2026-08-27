@@ -8,6 +8,7 @@ import {
 } from "@/lib/client/labels";
 import { reviewPath } from "@/lib/client/routes";
 import { ErrorState, EmptyState, PageSkeleton } from "../ui/states";
+import { CARD, PageHeader, PRIMARY_BUTTON } from "../ui/page-header";
 
 export function PracticeView() {
   const { data, loading, error, reload } = useLearnerDashboard();
@@ -27,18 +28,24 @@ export function PracticeView() {
   const { due, upcoming, recent } = data.reviews;
 
   return (
-    <div className="flex flex-col gap-10">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Practice</h1>
-        <p className="text-stone-600 dark:text-zinc-400">
-          Short reviews keep recent conversations alive.
-        </p>
-        <p className="text-sm text-stone-500">
-          Due today {data.reviews.counts.dueToday} · This week{" "}
-          {data.reviews.counts.dueThisWeek} · Active{" "}
-          {data.reviews.counts.active} · Mastered {data.reviews.counts.mastered}
-        </p>
-      </header>
+    <div className="flex flex-col gap-8 sm:gap-10">
+      <PageHeader
+        title="Practice"
+        body="Short reviews keep recent conversations alive."
+      />
+      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        {[
+          ["Due today", data.reviews.counts.dueToday],
+          ["This week", data.reviews.counts.dueThisWeek],
+          ["Active", data.reviews.counts.active],
+          ["Mastered", data.reviews.counts.mastered],
+        ].map(([label, value]) => (
+          <div key={label} className={CARD}>
+            <dt className="text-xs text-stone-500">{label}</dt>
+            <dd className="text-xl font-semibold tabular-nums">{value}</dd>
+          </div>
+        ))}
+      </dl>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
@@ -55,7 +62,7 @@ export function PracticeView() {
             {due.map((item) => (
               <li
                 key={item.id}
-                className="flex items-center justify-between gap-3 rounded-3xl bg-white/80 p-4 dark:bg-zinc-900/70"
+                className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${CARD}`}
               >
                 <div className="min-w-0">
                   <p className="font-medium">{humanizeConcept(item.concept)}</p>
@@ -66,7 +73,7 @@ export function PracticeView() {
                 </div>
                 <Link
                   href={reviewPath(item.id)}
-                  className="shrink-0 rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white"
+                  className={`${PRIMARY_BUTTON} w-full sm:w-auto`}
                 >
                   Practice
                 </Link>
@@ -87,9 +94,14 @@ export function PracticeView() {
         ) : (
           <ul className="flex flex-col gap-3">
             {upcoming.map((item) => (
-              <li key={item.id} className="flex items-baseline justify-between gap-3 rounded-3xl bg-white/70 px-4 py-3 dark:bg-zinc-900/60">
-                <p className="font-medium">{humanizeConcept(item.concept)}</p>
-                <p className="text-sm text-stone-500">
+              <li
+                key={item.id}
+                className={`flex items-baseline justify-between gap-3 ${CARD}`}
+              >
+                <p className="min-w-0 truncate font-medium">
+                  {humanizeConcept(item.concept)}
+                </p>
+                <p className="shrink-0 text-sm text-stone-500">
                   {formatDueLabel(item.nextReviewAt)}
                 </p>
               </li>
@@ -109,9 +121,14 @@ export function PracticeView() {
         ) : (
           <ul className="flex flex-col gap-3">
             {recent.map((item) => (
-              <li key={item.id} className="flex items-baseline justify-between gap-3 rounded-3xl bg-white/70 px-4 py-3 dark:bg-zinc-900/60">
-                <p className="font-medium">{humanizeConcept(item.concept)}</p>
-                <p className="text-sm text-stone-500">
+              <li
+                key={item.id}
+                className={`flex items-baseline justify-between gap-3 ${CARD}`}
+              >
+                <p className="min-w-0 truncate font-medium">
+                  {humanizeConcept(item.concept)}
+                </p>
+                <p className="shrink-0 text-sm text-stone-500">
                   {item.language.toUpperCase()} {item.difficulty}
                 </p>
               </li>

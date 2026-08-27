@@ -29,7 +29,7 @@ export function EvaluationPanel({ evaluation }: { evaluation: PublicEvaluation }
         <p className="text-sm uppercase tracking-wide text-zinc-500">
           Overall score
         </p>
-        <p className="text-4xl font-semibold">{evaluation.overallScore}</p>
+        <p className="text-4xl font-semibold sm:text-5xl">{evaluation.overallScore}</p>
       </div>
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5">

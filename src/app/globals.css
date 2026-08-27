@@ -25,11 +25,16 @@
   }
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   background-color: var(--background);
   background-image:
-    radial-gradient(ellipse at 12% -10%, rgba(196, 92, 38, 0.12), transparent 42%),
-    radial-gradient(ellipse at 100% 0%, rgba(45, 74, 60, 0.1), transparent 38%);
+    radial-gradient(ellipse at 12% -10%, rgba(196, 92, 38, 0.14), transparent 42%),
+    radial-gradient(ellipse at 100% 0%, rgba(45, 74, 60, 0.12), transparent 38%),
+    radial-gradient(ellipse at 50% 120%, rgba(196, 92, 38, 0.06), transparent 45%);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
@@ -43,6 +48,7 @@ body {
 
 .orbis-hero {
   background:
-    radial-gradient(120% 80% at 10% 0%, rgba(255, 214, 170, 0.35), transparent 55%),
+    radial-gradient(120% 80% at 10% 0%, rgba(255, 214, 170, 0.38), transparent 55%),
+    radial-gradient(80% 60% at 100% 100%, rgba(45, 74, 60, 0.45), transparent 50%),
     linear-gradient(145deg, #3d2a22 0%, #2d4a3c 52%, #1c1917 100%);
 }

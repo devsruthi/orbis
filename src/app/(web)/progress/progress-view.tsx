@@ -12,6 +12,7 @@ import {
 import { ErrorState, EmptyState, PageSkeleton } from "../ui/states";
 import { ScoreBar } from "../ui/score-bar";
 import { Sparkline } from "../ui/sparkline";
+import { CARD, PageHeader } from "../ui/page-header";
 
 export function ProgressView() {
   const { data, loading, error, reload } = useLearnerDashboard();
@@ -38,16 +39,15 @@ export function ProgressView() {
   ];
 
   return (
-    <div className="flex min-w-0 flex-col gap-10">
-      <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Progress</h1>
-        <p className="text-stone-600 dark:text-zinc-400">
-          {trendLabel(data.summary.trend)}
-          {data.summary.streakDays > 0
+    <div className="flex min-w-0 flex-col gap-8 sm:gap-10">
+      <PageHeader
+        title="Progress"
+        body={`${trendLabel(data.summary.trend)}${
+          data.summary.streakDays > 0
             ? ` · ${data.summary.streakDays}-day streak`
-            : " · No streak yet"}
-        </p>
-      </header>
+            : " · No streak yet"
+        }`}
+      />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
@@ -60,22 +60,24 @@ export function ProgressView() {
             action={{ href: "/explore", label: "Explore scenarios" }}
           />
         ) : (
-          <>
-            <p className="text-4xl font-semibold tabular-nums">
+          <div className={`${CARD} sm:p-5`}>
+            <p className="text-4xl font-semibold tabular-nums sm:text-5xl">
               {percent(data.summary.averageOverall)}
             </p>
-            <Sparkline
-              values={data.scoreHistory.map((point) => point.overall)}
-              label="Overall score over time"
-            />
-            <div className="flex flex-col gap-3">
+            <div className="mt-3">
+              <Sparkline
+                values={data.scoreHistory.map((point) => point.overall)}
+                label="Overall score over time"
+              />
+            </div>
+            <div className="mt-4 flex flex-col gap-3">
               {scores.slice(1).map((score) =>
                 score.value === null ? null : (
                   <ScoreBar key={score.label} label={score.label} value={score.value} />
                 ),
               )}
             </div>
-          </>
+          </div>
         )}
       </section>
 
@@ -88,9 +90,9 @@ export function ProgressView() {
             Keep practicing. We will identify patterns as you learn.
           </p>
         ) : (
-          <ol className="flex flex-col gap-4">
+          <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {data.weaknesses.map((item, index) => (
-              <li key={item.concept} className="rounded-3xl bg-white/80 p-4 dark:bg-zinc-900/70">
+              <li key={item.concept} className={CARD}>
                 <p className="font-medium">
                   {index + 1}. {humanizeConcept(item.concept)}
                 </p>
@@ -116,9 +118,11 @@ export function ProgressView() {
             Strengths from your conversations will appear here.
           </p>
         ) : (
-          <ul className="flex flex-col gap-2 text-sm">
+          <ul className="flex flex-col gap-2">
             {data.strengths.map((item) => (
-              <li key={item}>✓ {item}</li>
+              <li key={item} className={`${CARD} text-sm`}>
+                ✓ {item}
+              </li>
             ))}
           </ul>
         )}
@@ -135,9 +139,9 @@ export function ProgressView() {
             action={{ href: "/explore", label: "Explore scenarios" }}
           />
         ) : (
-          <ul className="flex flex-col gap-4">
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {data.history.map((session) => (
-              <li key={session.id} className="min-w-0 rounded-3xl bg-white/80 p-4 dark:bg-zinc-900/70">
+              <li key={session.id} className={`min-w-0 ${CARD}`}>
                 <Link href={playPath(session.id)} className="block min-w-0">
                   <p className="font-medium">{session.scenarioTitle}</p>
                   <p className="text-sm text-stone-500">
@@ -161,12 +165,9 @@ export function ProgressView() {
         <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
           Milestones
         </h2>
-        <ul className="flex flex-col gap-3">
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {data.achievements.map((item) => (
-            <li
-              key={item.id}
-              className="rounded-3xl bg-white/80 p-4 text-sm dark:bg-zinc-900/70"
-            >
+            <li key={item.id} className={`${CARD} text-sm`}>
               <p className={item.unlocked ? "font-medium" : "text-stone-500"}>
                 {item.unlocked ? "✓ " : ""}
                 {item.title}

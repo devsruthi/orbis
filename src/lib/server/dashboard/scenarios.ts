@@ -32,7 +32,7 @@ export function scenarioAttemptStatus(
 }
 
 export function scenarioLevel(scenario: Scenario): Scenario["supportedLevels"][number] {
-  return scenario.supportedLevels.includes("A2")
-    ? "A2"
-    : (scenario.supportedLevels[0] ?? "A2");
+  return scenario.supportedLevels.includes("A1")
+    ? "A1"
+    : (scenario.supportedLevels[0] ?? "A1");
 }

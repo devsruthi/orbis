@@ -157,25 +157,28 @@ export function ReviewPanel({ reviewItemId }: { reviewItemId: string }) {
   }
 
   if (loading) {
-    return <p className="px-6 py-16 text-zinc-500">Loading review…</p>;
+    return <p className="text-sm text-stone-500">Loading review…</p>;
   }
 
   return (
     <main className="flex min-h-full w-full min-w-0 flex-col gap-6">
-      <p className="text-sm uppercase tracking-[0.2em] text-zinc-500">
-        Quick Review
-      </p>
-      {item ? (
-        <p className="text-sm text-zinc-500">
-          {item.language.toUpperCase()} {item.difficulty} ·{" "}
-          {humanizeConcept(item.concept)}
+      <header className="orbis-hero rounded-[1.75rem] px-5 py-6 text-white">
+        <p className="text-xs uppercase tracking-[0.2em] text-white/70">
+          Quick review
         </p>
-      ) : null}
+        {item ? (
+          <p className="mt-2 text-sm text-white/80">
+            {item.language.toUpperCase()} {item.difficulty} ·{" "}
+            {humanizeConcept(item.concept)}
+          </p>
+        ) : null}
+        <h1 className="mt-2 text-2xl font-semibold">Keep it alive</h1>
+      </header>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       {!exercise && !result ? (
-        <p className="text-zinc-600 dark:text-zinc-400">
+        <p className="rounded-3xl bg-white/85 p-5 text-stone-600 dark:bg-zinc-900/70 dark:text-zinc-400">
           {timedOut
             ? "The review exercise is taking longer than expected."
             : "Preparing a short exercise…"}
@@ -189,16 +192,16 @@ export function ReviewPanel({ reviewItemId }: { reviewItemId: string }) {
             setTimedOut(false);
             setPollNonce((value) => value + 1);
           }}
-          className="self-start rounded border border-zinc-400 px-3 py-1 text-sm"
+          className="self-start rounded-full border border-stone-300 px-4 py-2 text-sm dark:border-zinc-700"
         >
           Retry
         </button>
       ) : null}
 
       {exercise && !result ? (
-        <section className="flex flex-col gap-4">
-          <p>Complete the sentence:</p>
-          <p className="text-2xl font-medium">{exercise.prompt}</p>
+        <section className="flex flex-col gap-4 rounded-3xl bg-white/85 p-5 dark:bg-zinc-900/70">
+          <p className="text-sm text-stone-500">Complete the sentence</p>
+          <p className="text-xl font-medium sm:text-2xl">{exercise.prompt}</p>
           {exercise.options && exercise.options.length > 0 ? (
             <div className="flex flex-col gap-2">
               {exercise.options.map((option) => (
@@ -207,7 +210,7 @@ export function ReviewPanel({ reviewItemId }: { reviewItemId: string }) {
                   type="button"
                   disabled={submitting}
                   onClick={() => void submit(option)}
-                  className="min-h-11 rounded border border-zinc-300 px-4 py-3 text-left hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-900"
+                  className="min-h-11 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-left hover:border-[#c45c26]/50 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
                 >
                   {option}
                 </button>
@@ -216,18 +219,18 @@ export function ReviewPanel({ reviewItemId }: { reviewItemId: string }) {
           ) : (
             <form
               onSubmit={onSubmit}
-              className="sticky bottom-0 z-10 flex gap-2 bg-stone-50 pb-[max(0.5rem,env(safe-area-inset-bottom),var(--keyboard-inset,0px))] pt-2 dark:bg-zinc-950"
+              className="sticky bottom-0 z-10 flex flex-col gap-2 bg-background pb-[max(0.5rem,env(safe-area-inset-bottom),var(--keyboard-inset,0px))] pt-2 sm:flex-row"
             >
               <input
                 value={answer}
                 onChange={(event) => setAnswer(event.target.value)}
-                className="min-h-11 min-w-0 flex-1 rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-transparent"
+                className="min-h-11 min-w-0 flex-1 rounded-2xl border border-stone-300 bg-white/80 px-3 py-2 dark:border-zinc-700 dark:bg-transparent"
                 autoComplete="off"
               />
               <button
                 type="submit"
                 disabled={submitting || !answer.trim()}
-                className="min-h-11 rounded border border-zinc-400 px-3 py-2 text-sm disabled:opacity-60"
+                className="min-h-11 rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white disabled:opacity-60"
               >
                 Check
               </button>
@@ -237,22 +240,22 @@ export function ReviewPanel({ reviewItemId }: { reviewItemId: string }) {
       ) : null}
 
       {result ? (
-        <section className="flex flex-col gap-3">
+        <section className="flex flex-col gap-3 rounded-3xl bg-white/85 p-5 dark:bg-zinc-900/70">
           <p className="text-xl font-medium">
-            {result.correct ? "✓ Correct" : "Incorrect"}
+            {result.correct ? "✓ Correct" : "Not quite"}
           </p>
           <p className="text-lg">“{result.expectedAnswer}”</p>
-          <p className="text-zinc-600 dark:text-zinc-400">{result.explanation}</p>
-          <p className="text-sm text-zinc-500">
+          <p className="text-stone-600 dark:text-zinc-400">{result.explanation}</p>
+          <p className="text-sm text-stone-500">
             Concept: {humanizeConcept(result.concept)}
           </p>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-stone-500">
             Next review: {formatNextReview(result.nextReviewAt)}
           </p>
         </section>
       ) : null}
 
-      <Link href="/practice" className="text-sm text-zinc-500 underline">
+      <Link href="/practice" className="text-sm text-stone-500 underline">
         Back to practice
       </Link>
     </main>

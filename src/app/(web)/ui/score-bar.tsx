@@ -15,7 +15,7 @@ export function ScoreBar({
         <span className="tabular-nums text-stone-500">{Math.round(value)}</span>
       </div>
       <div
-        className="h-2 overflow-hidden rounded-full bg-stone-200 dark:bg-zinc-800"
+        className="h-2.5 overflow-hidden rounded-full bg-stone-200 dark:bg-zinc-800"
         role="progressbar"
         aria-label={label}
         aria-valuemin={0}
