@@ -9,9 +9,7 @@ import { playPath } from "@/lib/client/routes";
 import {
   accuracyPercent,
   humanizeConcept,
-  languageFlag,
   pathHasStartedScene,
-  percent,
 } from "@/lib/client/labels";
 import { ErrorState, EmptyState, PageSkeleton } from "./ui/states";
 import { ScoreBar } from "./ui/score-bar";
@@ -168,58 +166,6 @@ export function HomeDashboard() {
           </dd>
         </div>
       </dl>
-
-      <section className="flex flex-col gap-3">
-        <SectionLabel>Languages</SectionLabel>
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {paths.map((path) => {
-            const rec = data.recommendations.find(
-              (item) => item.language === path.language,
-            );
-            const pending =
-              rec !== undefined &&
-              starting === `${rec.language}:${rec.scenarioId}`;
-            return (
-              <li key={path.language} className={CARD}>
-                <p className="text-sm text-stone-500">
-                  <span aria-hidden>{languageFlag(path.language)} </span>
-                  {path.languageName} · {path.level}
-                </p>
-                <p className="mt-1 font-serif text-3xl tabular-nums">
-                  {percent(path.averageOverall)}
-                </p>
-                <p className="mt-1 text-sm text-stone-500">
-                  {path.completedSessions === 0
-                    ? "No missions completed yet"
-                    : `${path.completedSessions} ${path.completedSessions === 1 ? "session" : "sessions"}`}
-                </p>
-                {rec ? (
-                  <div className="mt-4 flex flex-col gap-3">
-                    <div>
-                      <p className="font-medium">{rec.title}</p>
-                      <p className="mt-0.5 text-sm text-stone-600 dark:text-zinc-400">
-                        {rec.reason}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => void startRecommended(rec)}
-                      disabled={starting !== null}
-                      className={`${PRIMARY_BUTTON} w-full`}
-                    >
-                      {pending ? "Starting…" : "Enter scene"}
-                    </button>
-                  </div>
-                ) : (
-                  <Link href="/explore" className="mt-4 inline-block text-sm underline">
-                    Browse missions
-                  </Link>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </section>
 
       {hasProgress ? setupFlow : null}
 
