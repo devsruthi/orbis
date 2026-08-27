@@ -1,5 +1,5 @@
 export const CARD =
-  "rounded-3xl bg-white/85 p-4 shadow-sm shadow-stone-900/5 dark:bg-zinc-900/75";
+  "rounded-3xl border border-stone-200/70 bg-white/90 p-5 shadow-[0_18px_40px_-28px_rgba(61,42,34,0.55)] dark:border-zinc-800 dark:bg-zinc-900/80";
 
 export const PRIMARY_BUTTON =
   "inline-flex min-h-11 items-center justify-center rounded-full bg-[#c45c26] px-4 py-2 text-sm font-medium text-white disabled:opacity-60";
@@ -17,7 +17,7 @@ export function PageHeader({
   body?: string;
 }) {
   return (
-    <header className="flex flex-col gap-2">
+    <header className="flex flex-col gap-3">
       {kicker ? (
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-stone-500">
           {kicker}
@@ -27,7 +27,9 @@ export function PageHeader({
         {title}
       </h1>
       {body ? (
-        <p className="max-w-xl text-stone-600 dark:text-zinc-400">{body}</p>
+        <p className="max-w-xl text-base leading-relaxed text-stone-600 dark:text-zinc-400">
+          {body}
+        </p>
       ) : null}
     </header>
   );

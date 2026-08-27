@@ -37,8 +37,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [immersive]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-20 border-b border-stone-200/70 bg-[#f3eee4]/90 pt-[env(safe-area-inset-top)] backdrop-blur dark:border-zinc-800 dark:bg-[#14110e]/90">
+    <div className="flex h-dvh min-h-0 flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-20 shrink-0 border-b border-stone-200/70 bg-[#f3eee4]/90 pt-[env(safe-area-inset-top)] backdrop-blur dark:border-zinc-800 dark:bg-[#14110e]/90">
         <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Link href="/" className="flex min-h-11 items-center gap-2">
             <span
@@ -59,21 +59,23 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div
-        className={[
-          "mx-auto flex min-h-0 w-full min-w-0 max-w-4xl flex-1 flex-col px-4 pt-5 sm:px-6 sm:pt-8",
-          immersive
-            ? "pb-6"
-            : "pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:pb-12",
-        ].join(" ")}
-      >
-        {children}
-      </div>
+      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div
+          className={[
+            "mx-auto min-h-full w-full min-w-0 max-w-4xl px-4 pt-6 sm:px-6 sm:pt-10",
+            immersive
+              ? "pb-12 sm:pb-16"
+              : "pb-16 sm:pb-24",
+          ].join(" ")}
+        >
+          {children}
+        </div>
+      </main>
 
       {immersive ? null : (
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-stone-200/80 bg-[#f3eee4]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden dark:border-zinc-800 dark:bg-[#14110e]/95"
+        className="z-20 shrink-0 border-t border-stone-200/80 bg-[#f3eee4]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden dark:border-zinc-800 dark:bg-[#14110e]/95"
       >
         <ul className="mx-auto grid max-w-4xl grid-cols-4 px-1">
           {LINKS.map((link) => (
@@ -113,9 +115,7 @@ function NavLink({
         "block text-center text-sm font-medium",
         stacked ? "mx-1 my-1.5 rounded-2xl px-2 py-2.5" : "rounded-full px-3 py-1.5",
         active
-          ? stacked
-            ? "bg-[#c45c26]/12 text-[#c45c26]"
-            : "bg-[#c45c26]/12 text-[#c45c26]"
+          ? "bg-[#c45c26]/12 text-[#c45c26]"
           : "text-stone-500 hover:text-stone-800 dark:text-zinc-400 dark:hover:text-zinc-100",
       ].join(" ")}
     >

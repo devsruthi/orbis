@@ -231,7 +231,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
     .find((turn) => turn.role !== "user")?.id;
 
   return (
-    <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4">
+    <main className="flex min-h-full w-full min-w-0 flex-col gap-4">
       <header className="orbis-hero rounded-[1.75rem] px-4 py-5 text-white sm:px-5">
         <p className="text-sm text-white/70">
           <Link href="/" className="underline">
