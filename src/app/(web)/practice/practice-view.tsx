@@ -30,7 +30,7 @@ export function PracticeView() {
   return (
     <div className="flex flex-col gap-8 sm:gap-10">
       <PageHeader
-        title="Practice"
+        title="Reviews"
         body="Short reviews keep recent conversations alive."
       />
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">

@@ -8,13 +8,14 @@ import { startErrorMessage, startScenario } from "@/lib/client/start-session";
 import { playPath } from "@/lib/client/routes";
 import {
   accuracyPercent,
+  greetingForLanguage,
   humanizeConcept,
   languageFlag,
 } from "@/lib/client/labels";
 import { ErrorState, EmptyState, PageSkeleton } from "./ui/states";
 import { ScoreBar } from "./ui/score-bar";
 import { SetupFlow } from "./ui/setup-flow";
-import { CARD, PRIMARY_BUTTON } from "./ui/page-header";
+import { CARD, LevelBadge, PRIMARY_BUTTON, SectionLabel } from "./ui/page-header";
 
 export function HomeDashboard() {
   const { data, loading, error, reload } = useLearnerDashboard();
@@ -81,14 +82,14 @@ export function HomeDashboard() {
   if (!learner.setupComplete) {
     return (
       <div className="flex flex-col gap-8">
-        <header className="orbis-hero rounded-[1.75rem] px-5 py-8 text-white sm:rounded-[2rem] sm:px-8 sm:py-10">
-          <p className="text-xs uppercase tracking-[0.22em] text-white/70 sm:text-sm">
+        <header className="flex flex-col gap-3">
+          <p className="text-xs font-medium uppercase tracking-[0.22em] text-orbis-gold">
             Orbis
           </p>
-          <h1 className="mt-3 max-w-lg text-3xl font-semibold tracking-tight sm:text-5xl">
+          <h1 className="font-serif text-4xl font-medium tracking-tight sm:text-5xl">
             Enter the world. Speak the language.
           </h1>
-          <p className="mt-3 max-w-md text-sm text-white/80 sm:text-base">
+          <p className="max-w-md text-base leading-relaxed text-stone-600 dark:text-zinc-400">
             Choose a language, start at beginner, then step into a real
             situation.
           </p>
@@ -105,39 +106,100 @@ export function HomeDashboard() {
 
   return (
     <div className="flex flex-col gap-8 sm:gap-10">
-      <section className="orbis-hero rounded-[1.75rem] px-5 py-8 text-white sm:rounded-[2rem] sm:px-8 sm:py-10">
-        <p className="text-sm text-white/75">
-          <span aria-hidden="true">{languageFlag(learner.language)} </span>
-          {learner.languageName} · {learner.level}
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-5xl">
-          {data.summary.completedSessions === 0
-            ? "Your first mission is waiting."
-            : "Step back into the world."}
-        </h1>
-        <p className="mt-2 max-w-md text-base text-white/80 sm:text-lg">
-          {data.summary.completedSessions === 0
-            ? "Live the language. Do not drill it."
-            : "Continue living the language."}
-        </p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm text-stone-500">
+            <span aria-hidden="true">{languageFlag(learner.language)} </span>
+            {learner.languageName}
+            <span className="ml-2 align-middle">
+              <LevelBadge level={learner.level} />
+            </span>
+          </p>
+          <h1 className="mt-2 font-serif text-4xl font-medium tracking-tight sm:text-5xl">
+            {greetingForLanguage(learner.language)}
+          </h1>
+          <p className="mt-2 max-w-md text-base text-stone-600 dark:text-zinc-400">
+            {data.summary.completedSessions === 0
+              ? "Your first mission is waiting."
+              : "Step back into the world."}
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
             onClick={() => void continuePractice()}
             disabled={starting}
-            className="min-h-11 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-[#3d2a22] disabled:opacity-60"
+            className={`${PRIMARY_BUTTON} w-full sm:w-auto`}
           >
-            {starting ? "Starting…" : "Continue practice"}
+            {starting ? "Starting…" : "Continue"}
           </button>
           <Link
             href="/explore"
-            className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/40 px-5 py-2.5 text-sm text-white"
+            className="inline-flex min-h-11 items-center justify-center rounded-full border border-stone-300/90 px-5 py-2.5 text-sm dark:border-zinc-700"
           >
-            Explore scenes
+            All missions
           </Link>
         </div>
-        {startError ? <p className="mt-3 text-sm text-amber-100">{startError}</p> : null}
-      </section>
+      </header>
+      {startError ? <p className="text-sm text-red-700">{startError}</p> : null}
+
+      <dl className="grid grid-cols-3 gap-2 text-sm sm:gap-3">
+        <div className={CARD}>
+          <dt className="text-stone-500">Sessions</dt>
+          <dd className="font-serif text-2xl tabular-nums sm:text-3xl">
+            {data.summary.completedSessions}
+          </dd>
+        </div>
+        <div className={CARD}>
+          <dt className="text-stone-500">Accuracy</dt>
+          <dd className="font-serif text-2xl tabular-nums sm:text-3xl">
+            {accuracyPercent(data.summary.reviewAccuracy)}
+          </dd>
+        </div>
+        <div className={CARD}>
+          <dt className="text-stone-500">Streak</dt>
+          <dd className="font-serif text-2xl tabular-nums sm:text-3xl">
+            {data.summary.streakDays}
+            <span className="ml-1 text-xs font-sans font-normal text-stone-500 sm:text-sm">
+              {data.summary.streakDays === 1 ? "day" : "days"}
+            </span>
+          </dd>
+        </div>
+      </dl>
+
+      {recommendation ? (
+        <section className="flex flex-col gap-3">
+          <SectionLabel>Current mission</SectionLabel>
+          <div className={`flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between ${CARD}`}>
+            <div className="min-w-0">
+              <p className="font-serif text-2xl">{recommendation.title}</p>
+              <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
+                {recommendation.reason}
+              </p>
+              {recommendation.priorityConcepts.length > 0 ? (
+                <p className="mt-2 text-sm text-stone-500">
+                  Practice:{" "}
+                  {recommendation.priorityConcepts.map(humanizeConcept).join(" · ")}
+                </p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={() => void startRecommended()}
+              disabled={starting}
+              className={`${PRIMARY_BUTTON} w-full sm:w-auto`}
+            >
+              {starting ? "Starting…" : "Enter scene"}
+            </button>
+          </div>
+        </section>
+      ) : (
+        <EmptyState
+          title="Explore the world"
+          body="Choose a situation and start speaking."
+          action={{ href: "/explore", label: "Explore missions" }}
+        />
+      )}
 
       <SetupFlow
         key={`${learner.language}-${learner.level}`}
@@ -148,9 +210,7 @@ export function HomeDashboard() {
       />
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
-          Today
-        </h2>
+        <SectionLabel>Today</SectionLabel>
         {dueCount === 0 ? (
           <EmptyState
             title="You are all caught up."
@@ -172,75 +232,8 @@ export function HomeDashboard() {
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
-          Recommended for you
-        </h2>
-        {recommendation ? (
-          <div className={`flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between ${CARD} sm:p-5`}>
-            <div className="min-w-0">
-              <p className="text-xl font-medium">{recommendation.title}</p>
-              <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
-                Why? {recommendation.reason}
-              </p>
-              {recommendation.priorityConcepts.length > 0 ? (
-                <p className="mt-2 text-sm text-stone-500">
-                  Practice:{" "}
-                  {recommendation.priorityConcepts.map(humanizeConcept).join(" · ")}
-                </p>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              onClick={() => void startRecommended()}
-              disabled={starting}
-              className={`${PRIMARY_BUTTON} w-full sm:w-auto`}
-            >
-              Start scenario
-            </button>
-          </div>
-        ) : (
-          <EmptyState
-            title="Explore the world"
-            body="Choose a situation and start speaking."
-            action={{ href: "/explore", label: "Explore scenarios" }}
-          />
-        )}
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
-          Your progress
-        </h2>
-        <dl className="grid grid-cols-3 gap-2 text-sm sm:gap-3">
-          <div className={CARD}>
-            <dt className="text-stone-500">Sessions</dt>
-            <dd className="text-xl font-semibold tabular-nums sm:text-2xl">
-              {data.summary.completedSessions}
-            </dd>
-          </div>
-          <div className={CARD}>
-            <dt className="text-stone-500">Accuracy</dt>
-            <dd className="text-xl font-semibold tabular-nums sm:text-2xl">
-              {accuracyPercent(data.summary.reviewAccuracy)}
-            </dd>
-          </div>
-          <div className={CARD}>
-            <dt className="text-stone-500">Streak</dt>
-            <dd className="text-xl font-semibold tabular-nums sm:text-2xl">
-              {data.summary.streakDays}
-              <span className="ml-1 text-xs font-normal text-stone-500 sm:text-sm">
-                {data.summary.streakDays === 1 ? "day" : "days"}
-              </span>
-            </dd>
-          </div>
-        </dl>
-      </section>
-
-      <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
-            Weak areas
-          </h2>
+          <SectionLabel>Weak areas</SectionLabel>
           <Link href="/progress" className="text-sm text-stone-600 underline dark:text-zinc-400">
             View progress
           </Link>

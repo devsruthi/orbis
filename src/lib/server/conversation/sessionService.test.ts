@@ -278,7 +278,7 @@ describe("session service", () => {
     await expect(
       sessions.createSession({
         ...input,
-        worldId: "france",
+        worldId: "spain",
         learnerId,
       }),
     ).rejects.toBeInstanceOf(ConversationError);
@@ -294,7 +294,7 @@ describe("session service", () => {
     await expect(
       sessions.createSession({
         ...input,
-        language: "fr",
+        language: "es",
         learnerId,
       }),
     ).rejects.toMatchObject({ status: 400 });
@@ -309,6 +309,20 @@ describe("session service", () => {
     });
     expect(created.level).toBe("B2");
     expect(created.mission.difficulty).toBe("B2");
+  });
+
+  it("creates French sessions in the France world", async () => {
+    const { sessions } = await service();
+    const created = await sessions.createSession({
+      worldId: "france",
+      scenarioId: "apartment_viewing",
+      language: "fr",
+      level: "A1",
+      learnerId: createId(),
+    });
+    expect(created.language).toBe("fr");
+    expect(created.worldId).toBe("france");
+    expect(created.character.name).toBe("Madame Moreau");
   });
 
   it("snapshots location, variant, and simulation on session create", async () => {

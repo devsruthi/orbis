@@ -12,7 +12,7 @@ import {
 } from "@/lib/client/labels";
 import { ErrorState, PageSkeleton } from "../ui/states";
 import { SetupFlow } from "../ui/setup-flow";
-import { PageHeader, PRIMARY_BUTTON } from "../ui/page-header";
+import { PageHeader, PRIMARY_BUTTON, SectionLabel } from "../ui/page-header";
 import type { DashboardResponse } from "@/lib/shared/models";
 
 const CATEGORY_TONE: Record<string, string> = {
@@ -94,7 +94,7 @@ export function ExploreView() {
     <div className="flex min-w-0 flex-col gap-10">
       <PageHeader
         kicker={`${data.learner.languageName} · ${data.learner.level}`}
-        title="Explore"
+        title="Missions"
         body={`Step into everyday ${data.learner.languageName} life. Ready scenes can start now.`}
       />
       {startError ? <p className="text-sm text-red-700">{startError}</p> : null}
@@ -110,9 +110,7 @@ export function ExploreView() {
 
       {laterCategories.length > 0 ? (
         <div className="flex flex-col gap-8 opacity-80">
-          <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
-            Coming later
-          </h2>
+          <SectionLabel>Coming later</SectionLabel>
           {laterCategories.map((category) => (
             <CategorySection
               key={category.id}
@@ -140,20 +138,21 @@ function CategorySection({
 }) {
   return (
     <section className="flex min-w-0 flex-col gap-4">
-      <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
-        {categoryMark(category.id)}
-      </h2>
+      <SectionLabel>{categoryMark(category.id)}</SectionLabel>
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {category.scenarios.map((scenario) => (
           <li
             key={scenario.id}
-            className={[
-              "flex min-w-0 flex-col rounded-3xl bg-gradient-to-br p-5",
-              CATEGORY_TONE[category.id] ?? "from-stone-100 to-white",
-              "dark:from-zinc-900 dark:to-zinc-950",
-            ].join(" ")}
+            className="orbis-card flex min-w-0 flex-col overflow-hidden p-0"
           >
-            <p className="text-lg font-medium">{scenario.title}</p>
+            <div
+              className={[
+                "h-24 bg-gradient-to-br",
+                CATEGORY_TONE[category.id] ?? "from-stone-100 to-white",
+              ].join(" ")}
+            />
+            <div className="flex min-w-0 flex-1 flex-col p-5">
+            <p className="font-serif text-xl">{scenario.title}</p>
             <p className="text-sm text-stone-500">
               {scenario.language.toUpperCase()} · {scenario.level}
               {scenario.estimatedMinutes
@@ -188,6 +187,7 @@ function CategorySection({
                 {pendingId === scenario.id ? "Starting…" : "Enter scene"}
               </button>
             ) : null}
+            </div>
           </li>
         ))}
       </ul>

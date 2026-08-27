@@ -1,8 +1,8 @@
 export const CARD =
-  "rounded-3xl border border-stone-200/70 bg-white/90 p-5 shadow-[0_18px_40px_-28px_rgba(61,42,34,0.55)] dark:border-zinc-800 dark:bg-zinc-900/80";
+  "orbis-card p-5";
 
 export const PRIMARY_BUTTON =
-  "inline-flex min-h-11 items-center justify-center rounded-full bg-[#c45c26] px-4 py-2 text-sm font-medium text-white disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center rounded-full bg-orbis-gold px-4 py-2 text-sm font-medium text-white disabled:opacity-60";
 
 export const SECONDARY_BUTTON =
   "inline-flex min-h-11 items-center justify-center rounded-full border border-stone-300/90 px-4 py-2 text-sm disabled:opacity-60 dark:border-zinc-700";
@@ -23,7 +23,7 @@ export function PageHeader({
           {kicker}
         </p>
       ) : null}
-      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+      <h1 className="font-serif text-3xl font-medium tracking-tight sm:text-4xl">
         {title}
       </h1>
       {body ? (
@@ -32,5 +32,21 @@ export function PageHeader({
         </p>
       ) : null}
     </header>
+  );
+}
+
+export function LevelBadge({ level }: { level: string }) {
+  return (
+    <span className="inline-flex min-h-6 items-center rounded-full bg-orbis-lilac/15 px-2.5 py-0.5 text-xs font-semibold text-orbis-lilac">
+      {level}
+    </span>
+  );
+}
+
+export function SectionLabel({ children }: { children: string }) {
+  return (
+    <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
+      {children}
+    </h2>
   );
 }

@@ -5,6 +5,13 @@ import {
   germanyWorld,
   getGermanyScenarioContent,
 } from "./germany";
+import {
+  franceCategories,
+  franceLocations,
+  franceScenarios,
+  franceWorld,
+  getFranceScenarioContent,
+} from "./france";
 import type {
   Category,
   Location,
@@ -13,18 +20,21 @@ import type {
   World,
 } from "@/lib/shared/models";
 
-const worlds: World[] = [germanyWorld];
+const worlds: World[] = [germanyWorld, franceWorld];
 
 const categoriesByWorld: Record<string, Category[]> = {
   germany: germanyCategories,
+  france: franceCategories,
 };
 
 const scenariosByWorld: Record<string, Scenario[]> = {
   germany: germanyScenarios,
+  france: franceScenarios,
 };
 
 const locationsByWorld: Record<string, Location[]> = {
   germany: germanyLocations,
+  france: franceLocations,
 };
 
 export function listWorlds(): World[] {
@@ -72,6 +82,9 @@ export function getScenarioContent(
 ): ScenarioLocaleContent | null {
   if (worldId === "germany") {
     return getGermanyScenarioContent(scenarioId, language, level);
+  }
+  if (worldId === "france") {
+    return getFranceScenarioContent(scenarioId, language, level);
   }
   return null;
 }

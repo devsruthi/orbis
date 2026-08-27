@@ -85,4 +85,24 @@ describe("learner preferences API", () => {
     const body = (await b1.json()) as { learner: { level: string } };
     expect(body.learner.level).toBe("B1");
   });
+
+  it("saves French A1", async () => {
+    dir = await mkdtemp(path.join(tmpdir(), "orbis-prefs-api-fr-"));
+    setPersistenceForTests(new JsonFilePersistence(dir));
+    const id = createId();
+
+    const french = await PATCH(
+      new Request("http://orbis.test", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language: "fr", level: "A1" }),
+      }),
+      { params: Promise.resolve({ id }) },
+    );
+    expect(french.status).toBe(200);
+    const body = (await french.json()) as {
+      learner: { language: string; worldId?: string };
+    };
+    expect(body.learner.language).toBe("fr");
+  });
 });

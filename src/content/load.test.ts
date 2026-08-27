@@ -16,7 +16,7 @@ import {
 describe("content loading", () => {
   it("loads the Germany world", () => {
     const worlds = listWorlds();
-    expect(worlds).toHaveLength(1);
+    expect(worlds.map((world) => world.id).sort()).toEqual(["france", "germany"]);
     const germany = getWorld("germany");
     expect(germany?.countryCode).toBe("DE");
     expect(germany?.defaultLanguage).toBe("de");
@@ -92,6 +92,7 @@ describe("content loading", () => {
 
   it("does not load missing locale or scenario combinations", () => {
     expect(getScenarioContent("germany", "apartment_viewing", "fr", "A2")).toBeNull();
+    expect(getScenarioContent("france", "apartment_viewing", "de", "A2")).toBeNull();
     expect(getScenarioContent("germany", "job_interview", "de", "A2")).toBeNull();
   });
 
@@ -160,5 +161,30 @@ describe("content loading", () => {
       ]),
     );
     expect(parsed.learnerFacingDisclaimer).toMatch(/not legal advice/i);
+  });
+
+  it("loads the France world and French CEFR content", () => {
+    const france = getWorld("france");
+    expect(france?.countryCode).toBe("FR");
+    expect(france?.defaultLanguage).toBe("fr");
+    expect(getLanguage("fr")?.displayName.en).toBe("French");
+    const enabled = listScenarios("france").filter(
+      (scenario) => scenario.status === "enabled",
+    );
+    expect(enabled.map((scenario) => scenario.id).sort()).toEqual([
+      "apartment_viewing",
+      "city_registration",
+      "restaurant",
+    ]);
+    for (const scenarioId of [
+      "apartment_viewing",
+      "city_registration",
+      "restaurant",
+    ]) {
+      const content = getScenarioContent("france", scenarioId, "fr", "A1");
+      expect(content).not.toBeNull();
+      expect(ScenarioLocaleContentSchema.parse(content).language).toBe("fr");
+    }
+    expect(getLocation("mairie", "france")?.name.en).toBe("Mairie");
   });
 });

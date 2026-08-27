@@ -17,9 +17,9 @@ const SCORE_LABELS: { key: keyof Pick<
 
 export function EvaluationPanel({ evaluation }: { evaluation: PublicEvaluation }) {
   return (
-    <section className="flex flex-col gap-5 rounded-3xl bg-white/80 p-5 dark:bg-zinc-900/70">
+    <section className="orbis-card flex flex-col gap-5 p-5">
       <header className="flex flex-col gap-1">
-        <h2 className="text-xl font-semibold">Your evaluation</h2>
+        <h2 className="font-serif text-2xl">Your evaluation</h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           {evaluation.summary}
         </p>
@@ -29,7 +29,7 @@ export function EvaluationPanel({ evaluation }: { evaluation: PublicEvaluation }
         <p className="text-sm uppercase tracking-wide text-zinc-500">
           Overall score
         </p>
-        <p className="text-4xl font-semibold sm:text-5xl">{evaluation.overallScore}</p>
+        <p className="font-serif text-4xl font-medium sm:text-5xl">{evaluation.overallScore}</p>
       </div>
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-5">

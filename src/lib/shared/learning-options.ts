@@ -27,49 +27,13 @@ export const LEARNING_LANGUAGES: LearningLanguageOption[] = [
     blurb: "Apartments, offices, and the table — live everyday Germany.",
   },
   {
-    code: "es",
-    name: "Spanish",
-    nativeName: "Español",
-    worldId: "spain",
-    worldName: "Spain",
-    available: false,
-    blurb: "Coming soon.",
-  },
-  {
     code: "fr",
     name: "French",
     nativeName: "Français",
     worldId: "france",
     worldName: "France",
-    available: false,
-    blurb: "Coming soon.",
-  },
-  {
-    code: "it",
-    name: "Italian",
-    nativeName: "Italiano",
-    worldId: "italy",
-    worldName: "Italy",
-    available: false,
-    blurb: "Coming soon.",
-  },
-  {
-    code: "ja",
-    name: "Japanese",
-    nativeName: "日本語",
-    worldId: "japan",
-    worldName: "Japan",
-    available: false,
-    blurb: "Coming soon.",
-  },
-  {
-    code: "en",
-    name: "English",
-    nativeName: "English",
-    worldId: "united_kingdom",
-    worldName: "United Kingdom",
-    available: false,
-    blurb: "Coming soon.",
+    available: true,
+    blurb: "Apartments, the mairie, and the table — live everyday France.",
   },
 ];
 
@@ -83,6 +47,7 @@ export const LEARNING_LEVELS: LearningLevelOption[] = [
 
 const READY_LEVELS: Record<string, CefrLevel[]> = {
   de: [...CEFR_LEVELS],
+  fr: [...CEFR_LEVELS],
 };
 
 export const DEFAULT_CEFR_LEVEL: CefrLevel = "A1";

@@ -128,3 +128,15 @@ export function languageFlag(code: string): string {
   };
   return flags[code] ?? "";
 }
+
+export function greetingForLanguage(code: string): string {
+  const greetings: Record<string, string> = {
+    de: "Guten Tag!",
+    es: "¡Hola!",
+    fr: "Bonjour !",
+    it: "Ciao!",
+    ja: "こんにちは",
+    en: "Hello!",
+  };
+  return greetings[code] ?? "Hello!";
+}

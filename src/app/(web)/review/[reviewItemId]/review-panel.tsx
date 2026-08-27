@@ -162,17 +162,17 @@ export function ReviewPanel({ reviewItemId }: { reviewItemId: string }) {
 
   return (
     <main className="flex min-h-full w-full min-w-0 flex-col gap-6">
-      <header className="orbis-hero rounded-[1.75rem] px-5 py-6 text-white">
-        <p className="text-xs uppercase tracking-[0.2em] text-white/70">
+      <header className="flex flex-col gap-2">
+        <p className="text-xs uppercase tracking-[0.2em] text-orbis-gold">
           Quick review
         </p>
         {item ? (
-          <p className="mt-2 text-sm text-white/80">
+          <p className="text-sm text-stone-500">
             {item.language.toUpperCase()} {item.difficulty} ·{" "}
             {humanizeConcept(item.concept)}
           </p>
         ) : null}
-        <h1 className="mt-2 text-2xl font-semibold">Keep it alive</h1>
+        <h1 className="font-serif text-3xl font-medium">Keep it alive</h1>
       </header>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
@@ -199,9 +199,9 @@ export function ReviewPanel({ reviewItemId }: { reviewItemId: string }) {
       ) : null}
 
       {exercise && !result ? (
-        <section className="flex flex-col gap-4 rounded-3xl bg-white/85 p-5 dark:bg-zinc-900/70">
+        <section className="orbis-card flex flex-col gap-4 p-5">
           <p className="text-sm text-stone-500">Complete the sentence</p>
-          <p className="text-xl font-medium sm:text-2xl">{exercise.prompt}</p>
+          <p className="font-serif text-xl sm:text-2xl">{exercise.prompt}</p>
           {exercise.options && exercise.options.length > 0 ? (
             <div className="flex flex-col gap-2">
               {exercise.options.map((option) => (
@@ -210,7 +210,7 @@ export function ReviewPanel({ reviewItemId }: { reviewItemId: string }) {
                   type="button"
                   disabled={submitting}
                   onClick={() => void submit(option)}
-                  className="min-h-11 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-left hover:border-[#c45c26]/50 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
+                  className="min-h-11 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-left hover:border-orbis-gold/50 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
                 >
                   {option}
                 </button>
@@ -230,7 +230,7 @@ export function ReviewPanel({ reviewItemId }: { reviewItemId: string }) {
               <button
                 type="submit"
                 disabled={submitting || !answer.trim()}
-                className="min-h-11 rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white disabled:opacity-60"
+                className="min-h-11 rounded-full bg-orbis-gold px-4 py-2 text-sm text-white disabled:opacity-60"
               >
                 Check
               </button>
@@ -240,8 +240,8 @@ export function ReviewPanel({ reviewItemId }: { reviewItemId: string }) {
       ) : null}
 
       {result ? (
-        <section className="flex flex-col gap-3 rounded-3xl bg-white/85 p-5 dark:bg-zinc-900/70">
-          <p className="text-xl font-medium">
+        <section className="orbis-card flex flex-col gap-3 p-5">
+          <p className="font-serif text-xl">
             {result.correct ? "✓ Correct" : "Not quite"}
           </p>
           <p className="text-lg">“{result.expectedAnswer}”</p>

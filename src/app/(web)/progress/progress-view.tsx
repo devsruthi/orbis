@@ -61,7 +61,7 @@ export function ProgressView() {
           />
         ) : (
           <div className={`${CARD} sm:p-5`}>
-            <p className="text-4xl font-semibold tabular-nums sm:text-5xl">
+            <p className="font-serif text-4xl tabular-nums sm:text-5xl">
               {percent(data.summary.averageOverall)}
             </p>
             <div className="mt-3">
@@ -180,7 +180,7 @@ export function ProgressView() {
                 className={[
                   "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-lg",
                   item.unlocked
-                    ? "bg-[#c45c26]/15 text-[#c45c26]"
+                    ? "bg-orbis-gold/15 text-orbis-gold-deep"
                     : "bg-stone-100 text-stone-400 dark:bg-zinc-800",
                 ].join(" ")}
               >

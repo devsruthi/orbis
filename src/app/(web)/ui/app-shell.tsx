@@ -7,19 +7,55 @@ import {
   bindHistoryBackNavigation,
   onKeyboardInsetChange,
 } from "@/lib/client/platform";
+import {
+  DashboardProvider,
+  useLearnerDashboard,
+} from "@/lib/client/use-dashboard";
+import { greetingForLanguage, languageFlag } from "@/lib/client/labels";
+import {
+  HomeIcon,
+  MicIcon,
+  MissionsIcon,
+  OrbitMark,
+  ProgressIcon,
+  ReviewsIcon,
+} from "./icons";
+import { LevelBadge } from "./page-header";
+import { ThemeToggle } from "./theme-toggle";
 
 const LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/explore", label: "Explore" },
-  { href: "/practice", label: "Practice" },
-  { href: "/progress", label: "Progress" },
+  { href: "/", label: "Dashboard", Icon: HomeIcon },
+  { href: "/explore", label: "Missions", Icon: MissionsIcon },
+  { href: "/practice", label: "Reviews", Icon: ReviewsIcon },
+  { href: "/progress", label: "Progress", Icon: ProgressIcon },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <DashboardProvider>
+      <AppShellFrame>{children}</AppShellFrame>
+    </DashboardProvider>
+  );
+}
+
+function AppShellFrame({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const immersive = Boolean(
     pathname?.startsWith("/play") || pathname?.startsWith("/review"),
   );
+  const { data } = useLearnerDashboard();
+  const learner = data?.learner;
+  const recommendation = data?.recommendations[0];
+  const recommendedScenario = recommendation
+    ? data?.categories
+        .flatMap((category) => category.scenarios)
+        .find((scenario) => scenario.id === recommendation.scenarioId)
+    : undefined;
+  const missionProgress = recommendedScenario
+    ? recommendedScenario.completedCount > 0
+      ? 55
+      : 12
+    : 0;
 
   useEffect(() => bindHistoryBackNavigation(), []);
 
@@ -37,60 +73,145 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [immersive]);
 
   return (
-    <div className="flex h-dvh min-h-0 flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-20 shrink-0 border-b border-stone-200/70 bg-[#f3eee4]/90 pt-[env(safe-area-inset-top)] backdrop-blur dark:border-zinc-800 dark:bg-[#14110e]/90">
-        <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <Link href="/" className="flex min-h-11 items-center gap-2">
+    <div className="flex h-dvh min-h-0 bg-background text-foreground">
+      <aside className="hidden w-72 shrink-0 flex-col border-r border-stone-200/70 bg-white/80 px-4 py-5 dark:border-zinc-800 dark:bg-zinc-950/40 lg:flex">
+        <Link href="/" className="flex items-center gap-2 px-2 py-1 text-orbis-gold">
+          <OrbitMark className="h-8 w-8" />
+          <span className="font-serif text-2xl tracking-wide text-foreground">
+            ORBIS
+          </span>
+        </Link>
+
+        {learner?.setupComplete ? (
+          <div className="mt-6 flex items-center gap-3 rounded-2xl bg-stone-50 px-3 py-3 dark:bg-zinc-900/80">
             <span
               aria-hidden
-              className="inline-block h-2.5 w-2.5 rounded-full bg-[#c45c26]"
-            />
-            <span className="text-lg font-semibold tracking-tight">Orbis</span>
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-orbis-gold/20 text-lg"
+            >
+              {languageFlag(learner.language)}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-serif text-lg leading-tight">
+                {greetingForLanguage(learner.language)}
+              </span>
+              <span className="mt-0.5 flex items-center gap-2 text-sm text-stone-500">
+                {learner.level} Learner
+                <LevelBadge level={learner.level} />
+              </span>
+            </span>
+          </div>
+        ) : null}
+
+        <nav aria-label="Main" className="mt-6">
+          <ul className="flex flex-col gap-1">
+            {LINKS.map((link) => (
+              <li key={link.href}>
+                <NavLink
+                  href={link.href}
+                  label={link.label}
+                  pathname={pathname}
+                  Icon={link.Icon}
+                />
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div className="mt-auto flex flex-col gap-3 pt-6">
+          {recommendation ? (
+            <Link
+              href="/explore"
+              className="overflow-hidden rounded-2xl border border-stone-200/80 bg-stone-50 dark:border-zinc-800 dark:bg-zinc-900/70"
+            >
+              <span className="block h-16 bg-gradient-to-br from-amber-100 via-stone-100 to-emerald-100 dark:from-zinc-800 dark:to-zinc-900" />
+              <span className="block px-3 py-3">
+                <span className="block text-[11px] uppercase tracking-[0.16em] text-stone-400">
+                  Current mission
+                </span>
+                <span className="mt-1 block font-medium leading-tight">
+                  {recommendation.title}
+                </span>
+                <span
+                  className="mt-2 block h-1.5 overflow-hidden rounded-full bg-stone-200 dark:bg-zinc-800"
+                  aria-hidden
+                >
+                  <span
+                    className="block h-full rounded-full bg-orbis-gold"
+                    style={{ width: `${missionProgress}%` }}
+                  />
+                </span>
+              </span>
+            </Link>
+          ) : null}
+
+          <Link
+            href={learner?.setupComplete ? "/explore" : "/"}
+            className="flex items-center gap-3 rounded-2xl bg-orbis-gold/12 px-3 py-3 text-sm text-orbis-gold-deep"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orbis-gold text-white">
+              <MicIcon className="h-4 w-4" />
+            </span>
+            <span>
+              <span className="block font-medium">Voice mode</span>
+              <span className="block text-xs text-stone-500">
+                Speak naturally
+                {learner?.languageName ? ` in ${learner.languageName}` : ""}.
+              </span>
+            </span>
           </Link>
-          <nav aria-label="Main" className="hidden sm:block">
-            <ul className="flex gap-1">
+
+          <div className="flex items-center justify-between px-1">
+            <ThemeToggle />
+          </div>
+          <p className="px-1 text-[11px] text-stone-400">Made with care by Orbis.</p>
+        </div>
+      </aside>
+
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-20 shrink-0 border-b border-stone-200/70 bg-[#f6f3ec]/90 pt-[env(safe-area-inset-top)] backdrop-blur dark:border-zinc-800 dark:bg-[#16130f]/90 lg:hidden">
+          <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 px-4 py-3">
+            <Link href="/" className="flex min-h-11 items-center gap-2 text-orbis-gold">
+              <OrbitMark className="h-6 w-6" />
+              <span className="font-serif text-xl tracking-wide text-foreground">
+                ORBIS
+              </span>
+            </Link>
+            {learner?.setupComplete ? <LevelBadge level={learner.level} /> : null}
+          </div>
+        </header>
+
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div
+            className={[
+              "mx-auto min-h-full w-full min-w-0 px-4 pt-6 sm:px-6 sm:pt-8 lg:max-w-5xl lg:px-8 lg:pt-10",
+              immersive ? "pb-12 sm:pb-16" : "pb-16 sm:pb-24",
+            ].join(" ")}
+          >
+            {children}
+          </div>
+        </main>
+
+        {immersive ? null : (
+          <nav
+            aria-label="Main"
+            className="z-20 shrink-0 border-t border-stone-200/80 bg-[#f6f3ec]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-zinc-800 dark:bg-[#16130f]/95 lg:hidden"
+          >
+            <ul className="mx-auto grid max-w-4xl grid-cols-4 px-1">
               {LINKS.map((link) => (
                 <li key={link.href}>
-                  <NavLink href={link.href} label={link.label} pathname={pathname} />
+                  <NavLink
+                    href={link.href}
+                    label={link.label}
+                    pathname={pathname}
+                    Icon={link.Icon}
+                    stacked
+                  />
                 </li>
               ))}
             </ul>
           </nav>
-        </div>
-      </header>
-
-      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <div
-          className={[
-            "mx-auto min-h-full w-full min-w-0 max-w-4xl px-4 pt-6 sm:px-6 sm:pt-10",
-            immersive
-              ? "pb-12 sm:pb-16"
-              : "pb-16 sm:pb-24",
-          ].join(" ")}
-        >
-          {children}
-        </div>
-      </main>
-
-      {immersive ? null : (
-      <nav
-        aria-label="Main"
-        className="z-20 shrink-0 border-t border-stone-200/80 bg-[#f3eee4]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur sm:hidden dark:border-zinc-800 dark:bg-[#14110e]/95"
-      >
-        <ul className="mx-auto grid max-w-4xl grid-cols-4 px-1">
-          {LINKS.map((link) => (
-            <li key={link.href}>
-              <NavLink
-                href={link.href}
-                label={link.label}
-                pathname={pathname}
-                stacked
-              />
-            </li>
-          ))}
-        </ul>
-      </nav>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -99,11 +220,13 @@ function NavLink({
   href,
   label,
   pathname,
+  Icon,
   stacked = false,
 }: {
   href: string;
   label: string;
   pathname: string | null;
+  Icon: typeof HomeIcon;
   stacked?: boolean;
 }) {
   const active = href === "/" ? pathname === "/" : Boolean(pathname?.startsWith(href));
@@ -112,13 +235,16 @@ function NavLink({
       href={href}
       aria-current={active ? "page" : undefined}
       className={[
-        "block text-center text-sm font-medium",
-        stacked ? "mx-1 my-1.5 rounded-2xl px-2 py-2.5" : "rounded-full px-3 py-1.5",
+        "flex items-center gap-3 text-sm font-medium",
+        stacked
+          ? "mx-1 my-1.5 flex-col gap-1 rounded-2xl px-2 py-2.5 text-center"
+          : "rounded-2xl px-3 py-2.5",
         active
-          ? "bg-[#c45c26]/12 text-[#c45c26]"
-          : "text-stone-500 hover:text-stone-800 dark:text-zinc-400 dark:hover:text-zinc-100",
+          ? "bg-orbis-gold/15 text-orbis-gold-deep"
+          : "text-stone-500 hover:bg-stone-100 hover:text-stone-800 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
       ].join(" ")}
     >
+      <Icon className="h-5 w-5 shrink-0" />
       {label}
     </Link>
   );

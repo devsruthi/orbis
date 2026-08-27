@@ -27,7 +27,7 @@ export function ErrorState({
 }) {
   return (
     <div
-      className="flex flex-col gap-3 rounded-3xl border border-stone-200/70 bg-white/90 p-5 shadow-[0_18px_40px_-28px_rgba(61,42,34,0.45)] dark:border-zinc-800 dark:bg-zinc-900/80"
+      className="orbis-card flex flex-col gap-3 p-5"
       role="alert"
     >
       <p className="font-medium">Something went wrong</p>
@@ -51,7 +51,7 @@ export function EmptyState({
   action?: { href: string; label: string };
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-3xl border border-stone-200/70 bg-white/90 p-5 shadow-[0_18px_40px_-28px_rgba(61,42,34,0.45)] dark:border-zinc-800 dark:bg-zinc-900/80">
+    <div className="orbis-card flex flex-col gap-3 p-5">
       <p className="font-medium">{title}</p>
       <p className="text-sm text-stone-600 dark:text-zinc-400">{body}</p>
       {action ? (

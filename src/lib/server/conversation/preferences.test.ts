@@ -40,7 +40,7 @@ describe("learner preferences", () => {
     const persistence = await store();
     await expect(
       upsertLearnerPreferences(
-        { id: createId(), language: "fr", level: "A2" },
+        { id: createId(), language: "es", level: "A2" },
         persistence,
       ),
     ).rejects.toMatchObject({ status: 400 });
@@ -53,6 +53,17 @@ describe("learner preferences", () => {
       persistence,
     );
     expect(learner.cefrLevel).toBe("B1");
+  });
+
+  it("saves French A1 in the France world", async () => {
+    const persistence = await store();
+    const learner = await upsertLearnerPreferences(
+      { id: createId(), language: "fr", level: "A1" },
+      persistence,
+    );
+    expect(learner.targetLanguage).toBe("fr");
+    expect(learner.cefrLevel).toBe("A1");
+    expect(learner.worldId).toBe("france");
   });
 
   it("updates an existing learner without dropping progress fields", async () => {

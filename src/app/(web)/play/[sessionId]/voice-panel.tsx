@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import {
   MICROPHONE_EXPLANATION,
   VOICE_UNAVAILABLE_MESSAGE,
@@ -7,6 +8,15 @@ import {
   type VoiceCapabilities,
   type VoiceState,
 } from "@/lib/client/voice";
+import {
+  CaptionsIcon,
+  MicIcon,
+  PauseIcon,
+  ReplayIcon,
+  RefreshIcon,
+  SendIcon,
+} from "../../ui/icons";
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "../../ui/page-header";
 
 const SPEEDS: { id: SpeechSpeed; label: string }[] = [
   { id: "slow", label: "Slow" },
@@ -14,11 +24,42 @@ const SPEEDS: { id: SpeechSpeed; label: string }[] = [
   { id: "fast", label: "Fast" },
 ];
 
+function statusLabel(status: VoiceState["status"]): string {
+  if (status === "listening") {
+    return "Listening";
+  }
+  if (status === "requesting_permission") {
+    return "Allow mic";
+  }
+  if (status === "processing") {
+    return "Finishing";
+  }
+  if (status === "reviewing") {
+    return "Review";
+  }
+  if (status === "responding") {
+    return "Thinking";
+  }
+  if (status === "speaking") {
+    return "Speaking";
+  }
+  if (status === "paused") {
+    return "Paused";
+  }
+  if (status === "error") {
+    return "Error";
+  }
+  return "Idle";
+}
+
 export function VoicePanel(props: {
   state: VoiceState;
   capabilities: VoiceCapabilities;
   errorMessage: string | null;
   disabled: boolean;
+  languageName: string;
+  captionsOn: boolean;
+  onToggleCaptions: () => void;
   onStartListening: () => void;
   onStopListening: () => void;
   onSendTranscript: () => void;
@@ -33,43 +74,19 @@ export function VoicePanel(props: {
   const { state, capabilities } = props;
   const sttOff = !capabilities.speechToText;
   const ttsOff = !capabilities.textToSpeech;
+  const speedLabel =
+    SPEEDS.find((item) => item.id === state.speed)?.label ?? "Normal";
 
   return (
-    <section
-      aria-label="Voice conversation"
-      className="flex flex-col gap-3 rounded-3xl border border-stone-200/80 bg-white/80 p-3 dark:border-zinc-800 dark:bg-zinc-900/70"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm font-medium">Voice</p>
-        <fieldset className="flex items-center gap-1" disabled={props.disabled}>
-          <legend className="sr-only">Speech speed</legend>
-          {SPEEDS.map((speed) => (
-            <button
-              key={speed.id}
-              type="button"
-              onClick={() => props.onSetSpeed(speed.id)}
-              aria-pressed={state.speed === speed.id}
-              className={[
-                "min-h-9 rounded px-2 py-1 text-xs",
-                state.speed === speed.id
-                  ? "rounded-full bg-[#c45c26] text-white"
-                  : "rounded-full border border-stone-300 dark:border-zinc-700",
-              ].join(" ")}
-            >
-              {speed.label}
-            </button>
-          ))}
-        </fieldset>
-      </div>
-
+    <section aria-label="Voice conversation" className="flex flex-col gap-5">
       {sttOff ? (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-center text-sm text-stone-500">
           {VOICE_UNAVAILABLE_MESSAGE} Continue with text.
         </p>
       ) : (
         <>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            {MICROPHONE_EXPLANATION}
+          <p className="text-center text-sm text-stone-500">
+            Tap to speak. Speak in {props.languageName}. Take your time.
           </p>
           <MicrophoneButton
             state={state}
@@ -77,34 +94,101 @@ export function VoicePanel(props: {
             onStart={props.onStartListening}
             onStop={props.onStopListening}
           />
+          <p className="flex items-center justify-center gap-2 text-sm text-stone-500">
+            <span
+              className={[
+                "inline-block h-2 w-2 rounded-full",
+                state.status === "listening"
+                  ? "bg-red-500"
+                  : state.status === "speaking"
+                    ? "bg-orbis-gold"
+                    : "bg-orbis-gold",
+              ].join(" ")}
+            />
+            {statusLabel(state.status)}
+          </p>
           {state.interimTranscript ? (
-            <p className="text-sm text-zinc-500" aria-live="polite">
+            <p className="text-center text-sm text-stone-500" aria-live="polite">
               {state.interimTranscript}
             </p>
           ) : null}
         </>
       )}
 
-      {state.status === "reviewing" ? (
-        <div className="flex flex-col gap-2 rounded-2xl bg-[#efe6d6] p-3 dark:bg-zinc-800">
-          <p className="text-sm text-stone-500">You said:</p>
-          <p className="whitespace-pre-wrap break-words">“{state.transcript}”</p>
-          <div className="flex flex-wrap gap-2">
+      {ttsOff ? (
+        <p className="text-center text-sm text-stone-500">
+          Spoken replies are not available. The text still appears above.
+        </p>
+      ) : (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <ControlChip
+            onClick={props.onReplay}
+            disabled={props.disabled || !state.lastSpokenText}
+            icon={<ReplayIcon className="h-4 w-4" />}
+            label="Replay"
+          />
+          {state.status === "speaking" ? (
+            <ControlChip
+              onClick={props.onPause}
+              icon={<PauseIcon className="h-4 w-4" />}
+              label="Pause"
+            />
+          ) : null}
+          {state.status === "paused" ? (
+            <ControlChip onClick={props.onResume} label="Resume" />
+          ) : null}
+          {state.status === "speaking" || state.status === "paused" ? (
+            <ControlChip onClick={props.onStopSpeech} label="Stop" />
+          ) : null}
+          <fieldset disabled={props.disabled} className="contents">
+            <legend className="sr-only">Speech speed</legend>
             <button
               type="button"
-              onClick={props.onSendTranscript}
-              disabled={props.disabled}
-              className="min-h-11 rounded-full bg-[#c45c26] px-4 py-2 text-white disabled:opacity-60"
+              onClick={() => {
+                const index = SPEEDS.findIndex((item) => item.id === state.speed);
+                const next = SPEEDS[(index + 1) % SPEEDS.length];
+                if (next) {
+                  props.onSetSpeed(next.id);
+                }
+              }}
+              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900"
             >
-              Send
+              Speed · {speedLabel}
             </button>
+          </fieldset>
+          <ControlChip
+            onClick={props.onToggleCaptions}
+            icon={<CaptionsIcon className="h-4 w-4" />}
+            label={`Captions · ${props.captionsOn ? "On" : "Off"}`}
+            pressed={props.captionsOn}
+          />
+        </div>
+      )}
+
+      {state.status === "reviewing" ? (
+        <div className="orbis-card flex flex-col gap-3 p-4">
+          <p className="text-sm font-medium text-stone-500">Your last transcript</p>
+          <p className="font-serif text-lg leading-relaxed">
+            “{state.transcript}”
+          </p>
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={props.onTryAgain}
               disabled={props.disabled}
-              className="min-h-11 rounded-full border border-stone-300 px-4 py-2 dark:border-zinc-700"
+              className={SECONDARY_BUTTON}
             >
+              <RefreshIcon className="mr-2 h-4 w-4" />
               Try again
+            </button>
+            <button
+              type="button"
+              onClick={props.onSendTranscript}
+              disabled={props.disabled}
+              className={PRIMARY_BUTTON}
+            >
+              <SendIcon className="mr-2 h-4 w-4" />
+              Send
             </button>
             <button
               type="button"
@@ -118,68 +202,51 @@ export function VoicePanel(props: {
       ) : null}
 
       {state.status === "responding" ? (
-        <p className="text-sm text-zinc-500" aria-live="polite">
-          Thinking...
+        <p className="text-center text-sm text-stone-500" aria-live="polite">
+          Thinking…
         </p>
       ) : null}
 
-      {ttsOff ? (
-        <p className="text-sm text-zinc-500">
-          Spoken replies are not available. The text response still appears above.
-        </p>
-      ) : (
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={props.onReplay}
-            disabled={props.disabled || !state.lastSpokenText}
-            className="min-h-11 rounded border border-zinc-300 px-3 py-2 text-sm disabled:opacity-60 dark:border-zinc-700"
-          >
-            Replay
-          </button>
-          {state.status === "speaking" ? (
-            <button
-              type="button"
-              onClick={props.onPause}
-              className="min-h-11 rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
-            >
-              Pause
-            </button>
-          ) : null}
-          {state.status === "paused" ? (
-            <button
-              type="button"
-              onClick={props.onResume}
-              className="min-h-11 rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
-            >
-              Resume
-            </button>
-          ) : null}
-          {state.status === "speaking" || state.status === "paused" ? (
-            <button
-              type="button"
-              onClick={props.onStopSpeech}
-              className="min-h-11 rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
-            >
-              Stop
-            </button>
-          ) : null}
-          {state.status === "speaking" ? (
-            <p className="text-sm text-zinc-500" aria-live="polite">
-              🔊 Speaking...
-            </p>
-          ) : null}
-        </div>
-      )}
-
       {props.errorMessage ? (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-center text-sm text-red-600" role="alert">
           {props.errorMessage}
         </p>
       ) : null}
 
-      <p className="text-sm text-zinc-500">You can also type instead.</p>
+      <p className="sr-only">{MICROPHONE_EXPLANATION}</p>
     </section>
+  );
+}
+
+function ControlChip({
+  onClick,
+  disabled,
+  icon,
+  label,
+  pressed,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  icon?: ReactNode;
+  label: string;
+  pressed?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={pressed}
+      className={[
+        "inline-flex min-h-10 items-center gap-2 rounded-full border px-3 py-1.5 text-sm disabled:opacity-60",
+        pressed
+          ? "border-orbis-gold bg-orbis-gold/15 text-orbis-gold-deep"
+          : "border-stone-200 bg-white dark:border-zinc-700 dark:bg-zinc-900",
+      ].join(" ")}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 
@@ -201,33 +268,31 @@ function MicrophoneButton({
     state.status === "processing" ||
     state.status === "responding";
 
-  let label = "🎤 Tap to speak";
-  if (state.status === "requesting_permission") {
-    label = "Allow microphone…";
-  } else if (listening) {
-    label = "🔴 Listening...";
-  } else if (state.status === "processing") {
-    label = "Finishing…";
-  }
-
   return (
-    <button
-      type="button"
-      onClick={() => (listening ? onStop() : onStart())}
-      disabled={busy && !listening}
-      aria-pressed={listening}
-      aria-label={
-        listening ? "Stop listening" : "Start speaking to the character"
-      }
-      className={[
-        "min-h-12 w-full rounded-full px-4 py-3 text-base font-medium",
-        listening
-          ? "bg-red-700 text-white"
-          : "bg-[#c45c26] text-white",
-        busy && !listening ? "opacity-60" : "",
-      ].join(" ")}
-    >
-      {label}
-    </button>
+    <div className="flex justify-center py-2">
+      <button
+        type="button"
+        onClick={() => (listening ? onStop() : onStart())}
+        disabled={busy && !listening}
+        aria-pressed={listening}
+        aria-label={
+          listening ? "Stop listening" : "Start speaking to the character"
+        }
+        className={[
+          "relative flex h-28 w-28 items-center justify-center rounded-full",
+          listening ? "bg-red-700 text-white" : "orbis-mic-ring text-white",
+          busy && !listening ? "opacity-60" : "",
+        ].join(" ")}
+      >
+        <span
+          className={[
+            "relative z-10 flex h-20 w-20 items-center justify-center rounded-full shadow-lg",
+            listening ? "bg-red-700" : "bg-orbis-gold",
+          ].join(" ")}
+        >
+          <MicIcon className="h-8 w-8 text-white" />
+        </span>
+      </button>
+    </div>
   );
 }

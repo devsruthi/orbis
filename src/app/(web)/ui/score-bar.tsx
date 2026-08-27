@@ -23,7 +23,7 @@ export function ScoreBar({
         aria-valuenow={Math.round(value)}
       >
         <div
-          className="h-full rounded-full bg-[#c45c26]"
+          className="h-full rounded-full bg-orbis-gold"
           style={{ width: `${percent}%` }}
         />
       </div>

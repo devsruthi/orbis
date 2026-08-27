@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -12,11 +12,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+});
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#f3eee4",
+  themeColor: "#f6f3ec",
 };
 
 export const metadata: Metadata = {
@@ -28,9 +33,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-dvh antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-dvh antialiased`}
     >
-      <body className="flex h-full min-h-0 flex-col">{children}</body>
+      <body className="flex h-full min-h-0 flex-col">
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('orbis-theme');var d=t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d)}catch(e){}",
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }
