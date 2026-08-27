@@ -17,13 +17,14 @@ const CHECK_TOOL_NAME = "message_check";
 const MESSAGE_CHECK_TOOL: Anthropic.Tool = {
   name: CHECK_TOOL_NAME,
   description:
-    "Report spelling and grammar issues in one learner message before it is sent.",
+    "Report spelling, grammar, tense, and mixed-language issues in one learner message before it is sent.",
   input_schema: {
     type: "object",
     properties: {
       ok: {
         type: "boolean",
-        description: "True when the message has no spelling or grammar issues.",
+        description:
+          "True when the message has no spelling, grammar, tense, or vocabulary issues.",
       },
       corrected: {
         type: "string",
@@ -37,7 +38,7 @@ const MESSAGE_CHECK_TOOL: Anthropic.Tool = {
           properties: {
             category: {
               type: "string",
-              enum: ["spelling", "grammar", "word_order", "vocabulary"],
+              enum: ["spelling", "grammar", "tense", "word_order", "vocabulary"],
             },
             original: { type: "string" },
             correction: { type: "string" },

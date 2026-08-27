@@ -33,6 +33,8 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   const [messageCheck, setMessageCheck] = useState<PublicMessageCheck | null>(
     null,
   );
+  const [voiceCheck, setVoiceCheck] = useState<PublicMessageCheck | null>(null);
+  const [voiceChecking, setVoiceChecking] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [timedOut, setTimedOut] = useState(false);
@@ -69,6 +71,41 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
       return { reply: result.reply };
     },
   });
+
+  useEffect(() => {
+    if (!sessionId || voice.state.status !== "reviewing") {
+      setVoiceCheck(null);
+      setVoiceChecking(false);
+      return;
+    }
+    const text = voice.state.transcript.trim();
+    if (!text) {
+      return;
+    }
+    let cancelled = false;
+    setVoiceCheck(null);
+    setVoiceChecking(true);
+    void orbisApi
+      .checkMessage(sessionId, text)
+      .then((result) => {
+        if (!cancelled) {
+          setVoiceCheck(result);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setVoiceCheck(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setVoiceChecking(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, voice.state.status, voice.state.transcript]);
 
   useEffect(() => {
     let cancelled = false;
@@ -469,7 +506,8 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
             disabled={composerBusy}
             captionsOn={captionsOn}
             onToggleCaptions={() => setCaptionsOn((value) => !value)}
-            onSendTranscript={() => void voice.sendTranscript()}
+            onSendTranscript={(text) => void voice.sendTranscript(text)}
+            onEditTranscript={voice.editTranscript}
             onTryAgain={() => void voice.tryAgain()}
             onDiscard={voice.discardTranscript}
             onPause={voice.pause}
@@ -477,6 +515,8 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
             onStopSpeech={voice.stopSpeech}
             onReplay={voice.replay}
             onSetSpeed={voice.setSpeed}
+            check={voiceCheck}
+            checking={voiceChecking}
           />
 
           {messageCheck && messageCheck.issues.length > 0 ? (

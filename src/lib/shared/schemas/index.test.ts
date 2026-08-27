@@ -118,6 +118,26 @@ describe("Zod validation", () => {
     });
     expect(result.issues[0]?.category).toBe("spelling");
     expect(
+      MessageCheckResultSchema.parse({
+        ok: false,
+        corrected: "Ich hätte gerne einen Kaffee",
+        issues: [
+          {
+            category: "tense",
+            original: "hatte",
+            correction: "hätte gerne",
+            explanation: "Use the polite conditional, not the past tense.",
+          },
+          {
+            category: "vocabulary",
+            original: "coffee",
+            correction: "Kaffee",
+            explanation: "Coffee is English; use Kaffee in German.",
+          },
+        ],
+      }).issues.map((issue) => issue.category),
+    ).toEqual(["tense", "vocabulary"]);
+    expect(
       MessageCheckResultSchema.safeParse({
         ok: true,
         corrected: "Hallo",

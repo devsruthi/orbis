@@ -24,6 +24,7 @@ export type VoiceEvent =
   | { type: "final"; text: string }
   | { type: "try_again" }
   | { type: "discard_transcript" }
+  | { type: "edit_transcript"; text: string }
   | { type: "send_started" }
   | { type: "send_succeeded"; reply: string }
   | { type: "speaking_started"; text: string }
@@ -104,6 +105,16 @@ export function reduceVoice(state: VoiceState, event: VoiceEvent): VoiceState {
         interimTranscript: "",
         error: null,
       };
+    case "edit_transcript": {
+      if (state.status !== "reviewing") {
+        return state;
+      }
+      const transcript = event.text.trim();
+      if (!transcript) {
+        return state;
+      }
+      return { ...state, transcript };
+    }
     case "send_started":
       if (state.status !== "reviewing" || !state.transcript.trim()) {
         return state;

@@ -117,10 +117,14 @@ export function useVoiceConversation(options: {
     dispatch({ type: "reset" });
   }, [dispatch, stt]);
 
-  const sendTranscript = useCallback(async () => {
-    const body = toConversationTurnBody(stateRef.current.transcript, "voice");
+  const sendTranscript = useCallback(async (override?: string) => {
+    const text = (override ?? stateRef.current.transcript).trim();
+    const body = toConversationTurnBody(text, "voice");
     if (!body) {
       return;
+    }
+    if (override && override.trim() !== stateRef.current.transcript.trim()) {
+      dispatch({ type: "edit_transcript", text: override });
     }
     dispatch({ type: "send_started" });
     try {
@@ -201,6 +205,8 @@ export function useVoiceConversation(options: {
     sendTranscript,
     tryAgain: startListening,
     discardTranscript: () => dispatch({ type: "discard_transcript" }),
+    editTranscript: (text: string) =>
+      dispatch({ type: "edit_transcript", text }),
     pause: () => {
       tts.pause();
       dispatch({ type: "pause" });

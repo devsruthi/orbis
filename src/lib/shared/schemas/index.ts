@@ -616,6 +616,7 @@ export const TurnBodySchema = z
 export const MessageCheckIssueCategorySchema = z.enum([
   "spelling",
   "grammar",
+  "tense",
   "word_order",
   "vocabulary",
 ]);

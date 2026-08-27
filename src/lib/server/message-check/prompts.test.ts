@@ -14,6 +14,8 @@ describe("message check prompts", () => {
     expect(system).toContain("pre-send language checker");
     expect(system).toContain("German (de)");
     expect(system).toContain("A1");
+    expect(system).toContain("Tense or verb-form mistakes");
+    expect(system).toContain("mixed-language words");
     expect(system).not.toContain("You are Ulla");
     expect(buildMessageCheckUserMessage("enshuldigung")).toContain(
       "enshuldigung",

@@ -40,6 +40,32 @@ describe("message checker (mocked Claude)", () => {
     expect(complete).toHaveBeenCalledOnce();
   });
 
+  it("accepts tense and mixed-language vocabulary issues", () => {
+    const output = parseMessageCheckResult({
+      ok: false,
+      corrected: "Ich hätte gerne einen Kaffee",
+      issues: [
+        {
+          category: "tense",
+          original: "hatte",
+          correction: "hätte gerne",
+          explanation: "Use the polite conditional here, not the past tense.",
+        },
+        {
+          category: "vocabulary",
+          original: "coffee",
+          correction: "Kaffee",
+          explanation: "Coffee is English; the German word is Kaffee.",
+        },
+      ],
+    });
+    expect(output.ok).toBe(false);
+    expect(output.issues.map((issue) => issue.category)).toEqual([
+      "tense",
+      "vocabulary",
+    ]);
+  });
+
   it("treats an empty issue list as ok even if the model says otherwise", async () => {
     const checker = createMessageChecker(async () => ({
       ok: false,

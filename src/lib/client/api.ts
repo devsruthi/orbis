@@ -107,7 +107,7 @@ export type PublicMessageCheck = {
   ok: boolean;
   corrected: string;
   issues: {
-    category: "spelling" | "grammar" | "word_order" | "vocabulary";
+    category: "spelling" | "grammar" | "tense" | "word_order" | "vocabulary";
     original: string;
     correction: string;
     explanation: string;

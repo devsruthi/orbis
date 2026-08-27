@@ -77,6 +77,29 @@ describe("voice state machine", () => {
     expect(state.transcript).toBe("Ich möchte die Wohnung sehen.");
   });
 
+  it("lets the learner edit a transcript before sending", () => {
+    const reviewing: VoiceState = {
+      ...initialVoiceState(),
+      status: "reviewing",
+      transcript: "ich hatte coffee",
+    };
+    const edited = reduceVoice(reviewing, {
+      type: "edit_transcript",
+      text: "Ich hätte gerne einen Kaffee",
+    });
+    expect(edited.status).toBe("reviewing");
+    expect(edited.transcript).toBe("Ich hätte gerne einen Kaffee");
+    expect(
+      reduceVoice(reviewing, { type: "edit_transcript", text: "   " }).transcript,
+    ).toBe("ich hatte coffee");
+    expect(
+      reduceVoice(initialVoiceState(), {
+        type: "edit_transcript",
+        text: "Hallo",
+      }).transcript,
+    ).toBe("");
+  });
+
   it("does not send an empty transcript", () => {
     const empty = reduceVoice(initialVoiceState(), { type: "final", text: "   " });
     expect(empty.status).toBe("idle");

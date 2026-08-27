@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   MICROPHONE_EXPLANATION,
   VOICE_UNAVAILABLE_MESSAGE,
@@ -8,6 +8,7 @@ import {
   type VoiceCapabilities,
   type VoiceState,
 } from "@/lib/client/voice";
+import type { PublicMessageCheck } from "@/lib/client/api";
 import {
   CaptionsIcon,
   MicIcon,
@@ -17,6 +18,7 @@ import {
   SendIcon,
 } from "../../ui/icons";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "../../ui/page-header";
+import { MessageCheckIssues } from "./message-check-card";
 
 const SPEEDS: { id: SpeechSpeed; label: string }[] = [
   { id: "slow", label: "Slow" },
@@ -59,7 +61,8 @@ export function VoiceDock(props: {
   disabled: boolean;
   captionsOn: boolean;
   onToggleCaptions: () => void;
-  onSendTranscript: () => void;
+  onSendTranscript: (text?: string) => void;
+  onEditTranscript: (text: string) => void;
   onTryAgain: () => void;
   onDiscard: () => void;
   onPause: () => void;
@@ -67,9 +70,20 @@ export function VoiceDock(props: {
   onStopSpeech: () => void;
   onReplay: () => void;
   onSetSpeed: (speed: SpeechSpeed) => void;
+  check: PublicMessageCheck | null;
+  checking: boolean;
 }) {
   const { state, capabilities } = props;
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(state.transcript);
   const sttOff = !capabilities.speechToText;
+
+  useEffect(() => {
+    setDraft(state.transcript);
+    if (state.status !== "reviewing") {
+      setEditing(false);
+    }
+  }, [state.status, state.transcript]);
   const ttsOff = !capabilities.textToSpeech;
   const speedLabel =
     SPEEDS.find((item) => item.id === state.speed)?.label ?? "Normal";
@@ -153,35 +167,129 @@ export function VoiceDock(props: {
       {state.status === "reviewing" ? (
         <div className="orbis-card flex flex-col gap-3 p-4">
           <p className="text-sm font-medium text-stone-500">Your last transcript</p>
-          <p className="font-serif text-lg leading-relaxed">
-            “{state.transcript}”
-          </p>
+          {editing ? (
+            <textarea
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              rows={3}
+              maxLength={4000}
+              className="min-h-[4.5rem] w-full rounded-2xl border border-stone-300 bg-white p-3 text-sm dark:border-zinc-700 dark:bg-zinc-950"
+              disabled={props.disabled}
+            />
+          ) : (
+            <p className="font-serif text-lg leading-relaxed">
+              “{state.transcript}”
+            </p>
+          )}
+          {props.checking && !editing ? (
+            <p className="text-sm text-stone-500">
+              Checking spelling, grammar, and tense…
+            </p>
+          ) : null}
+          {!editing && props.check && props.check.issues.length > 0 ? (
+            <>
+              <MessageCheckIssues issues={props.check.issues} />
+              {props.check.corrected !== state.transcript ? (
+                <p className="text-sm text-stone-600 dark:text-zinc-400">
+                  Suggested:{" "}
+                  <span className="font-medium text-foreground">
+                    {props.check.corrected}
+                  </span>
+                </p>
+              ) : null}
+            </>
+          ) : null}
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={props.onTryAgain}
-              disabled={props.disabled}
-              className={SECONDARY_BUTTON}
-            >
-              <RefreshIcon className="mr-2 h-4 w-4" />
-              Try again
-            </button>
-            <button
-              type="button"
-              onClick={props.onSendTranscript}
-              disabled={props.disabled}
-              className={PRIMARY_BUTTON}
-            >
-              <SendIcon className="mr-2 h-4 w-4" />
-              Send
-            </button>
-            <button
-              type="button"
-              onClick={props.onDiscard}
-              className="min-h-11 rounded-full px-3 py-2 text-sm text-stone-500 underline"
-            >
-              Cancel
-            </button>
+            {editing ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = draft.trim();
+                    if (!next) {
+                      return;
+                    }
+                    props.onEditTranscript(next);
+                    setEditing(false);
+                  }}
+                  disabled={props.disabled || !draft.trim()}
+                  className={PRIMARY_BUTTON}
+                >
+                  Check edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraft(state.transcript);
+                    setEditing(false);
+                  }}
+                  className="min-h-11 rounded-full px-3 py-2 text-sm text-stone-500 underline"
+                >
+                  Cancel edit
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={props.onTryAgain}
+                  disabled={props.disabled}
+                  className={SECONDARY_BUTTON}
+                >
+                  <RefreshIcon className="mr-2 h-4 w-4" />
+                  Try again
+                </button>
+                {props.check && props.check.issues.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => props.onSendTranscript(props.check?.corrected)}
+                    disabled={props.disabled || props.checking}
+                    className={PRIMARY_BUTTON}
+                  >
+                    <SendIcon className="mr-2 h-4 w-4" />
+                    Send correction
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => props.onSendTranscript()}
+                    disabled={props.disabled || props.checking}
+                    className={PRIMARY_BUTTON}
+                  >
+                    <SendIcon className="mr-2 h-4 w-4" />
+                    Send
+                  </button>
+                )}
+                {props.check && props.check.issues.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => props.onSendTranscript()}
+                    disabled={props.disabled || props.checking}
+                    className={SECONDARY_BUTTON}
+                  >
+                    Send anyway
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDraft(state.transcript);
+                    setEditing(true);
+                  }}
+                  disabled={props.disabled}
+                  className="min-h-11 rounded-full px-3 py-2 text-sm text-stone-500 underline"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={props.onDiscard}
+                  className="min-h-11 rounded-full px-3 py-2 text-sm text-stone-500 underline"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
           </div>
         </div>
       ) : null}
