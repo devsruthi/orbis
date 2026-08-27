@@ -8,6 +8,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -38,15 +39,15 @@ const MAX_POLLS = 36;
 
 const EVALUATION_COPY = [
   {
-    title: "Scoring your mission…",
+    title: "Evaluating your responses…",
     body: "Reading through the conversation.",
   },
   {
-    title: "Checking how natural it sounded…",
-    body: "This stays on until your results are ready.",
+    title: "Evaluating your responses…",
+    body: "Checking how naturally you spoke.",
   },
   {
-    title: "Almost there…",
+    title: "Evaluating your responses…",
     body: "Putting your feedback together.",
   },
 ] as const;
@@ -394,9 +395,11 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
     }
     voice.cancelListening();
     voice.stopSpeech();
-    setCompleting(true);
-    setError(null);
-    setTimedOut(false);
+    flushSync(() => {
+      setCompleting(true);
+      setError(null);
+      setTimedOut(false);
+    });
     try {
       const result = await orbisApi.completeSession(session.id);
       setSession(result.session);
@@ -581,10 +584,8 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
         </div>
       ) : null}
 
-      <div className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pb-3">
-        {restarting ? (
-          <BusyOverlay title="Starting over…" body="Opening a fresh scene." />
-        ) : evaluating ? (
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        {evaluating ? (
           <EvaluationBusyOverlay
             timedOut={timedOut}
             onCheckAgain={() => {
@@ -592,6 +593,10 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
               setPollNonce((value) => value + 1);
             }}
           />
+        ) : null}
+      <div className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pb-3">
+        {restarting ? (
+          <BusyOverlay title="Starting over…" body="Opening a fresh scene." />
         ) : null}
         <section className="flex flex-col gap-2">
           {session.turns.map((turn) => (
@@ -795,12 +800,13 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
                 disabled={composerBusy || !objectivesComplete}
                 className="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-300 dark:hover:bg-zinc-800"
               >
-                {completing ? "Starting…" : "Complete session"}
+                {completing ? "Evaluating…" : "Complete session"}
               </button>
             </div>
           </div>
         </div>
       ) : null}
+      </div>
     </main>
   );
 }

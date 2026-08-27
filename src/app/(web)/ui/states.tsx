@@ -80,7 +80,7 @@ export function BusyOverlay({
       className={
         variant === "page"
           ? "fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#f6f3ec]/90 dark:bg-[#16130f]/90"
-          : "absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#f6f3ec]/80 dark:bg-[#16130f]/80"
+          : "absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-[#f6f3ec]/80 dark:bg-[#16130f]/80"
       }
       role="status"
       aria-live="polite"
