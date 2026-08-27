@@ -20,7 +20,11 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  timeoutMs = REQUEST_TIMEOUT_MS,
+): Promise<T> {
   if (isLikelyOffline()) {
     throw new NetworkError(
       "No internet connection. Please reconnect and try again.",
@@ -29,7 +33,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   let response: Response;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     response = await fetch(apiUrl(path), {
       ...init,
@@ -193,9 +197,13 @@ export const orbisApi = {
       session: PublicSession;
       status: string;
       evaluation?: PublicEvaluation;
-    }>(`/api/sessions/${sessionId}/complete`, {
-      method: "POST",
-    }),
+    }>(
+      `/api/sessions/${sessionId}/complete`,
+      {
+        method: "POST",
+      },
+      90_000,
+    ),
   getEvaluation: (sessionId: string) =>
     request<{ evaluation: PublicEvaluation }>(
       `/api/sessions/${sessionId}/evaluation`,

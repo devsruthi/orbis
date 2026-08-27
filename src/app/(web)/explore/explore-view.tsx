@@ -11,7 +11,7 @@ import {
   humanizeConcept,
   languageFlag,
 } from "@/lib/client/labels";
-import { ErrorState, PageSkeleton } from "../ui/states";
+import { ErrorState, PageSkeleton, BusyOverlay } from "../ui/states";
 import { SetupFlow } from "../ui/setup-flow";
 import { PageHeader, PRIMARY_BUTTON, SECONDARY_BUTTON } from "../ui/page-header";
 import {
@@ -88,7 +88,7 @@ export function ExploreView() {
   }
 
   async function restart(path: DashboardPath, scenario: DashboardScenario) {
-    if (scenario.status !== "enabled" || !scenario.activeSessionId) {
+    if (scenario.status !== "enabled") {
       return;
     }
     setPendingId(`${path.worldId}:${scenario.id}`);
@@ -143,6 +143,19 @@ export function ExploreView() {
         body={`Four live scenes in every part of ${activePath.languageName} ${activePath.level}. Walk in and start speaking.`}
       />
       {startError ? <p className="text-sm text-red-700">{startError}</p> : null}
+      {pendingKind ? (
+        <BusyOverlay
+          variant="page"
+          title={
+            pendingKind === "restart" ? "Starting over…" : "Opening the scene…"
+          }
+          body={
+            pendingKind === "restart"
+              ? "Opening a fresh scene."
+              : "Getting the conversation ready."
+          }
+        />
+      ) : null}
 
       <div className="flex min-w-0 flex-col gap-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -302,48 +315,76 @@ function CategorySection({
                 {scenario.supportedConcepts.map(humanizeConcept).join(" · ")}
               </p>
             ) : null}
-            <p className="mt-2 text-sm text-stone-500">
-              {scenario.status === "coming_soon"
-                ? "Coming soon"
-                : scenario.completedCount > 0
-                  ? `${attemptStatusLabel(scenario.attemptStatus)} · ${scenario.completedCount} ${scenario.completedCount === 1 ? "time" : "times"}`
-                  : attemptStatusLabel(scenario.attemptStatus)}
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-stone-500">
+              {scenario.status === "coming_soon" ? (
+                "Coming soon"
+              ) : scenario.completedCount > 0 ? (
+                <>
+                  <span className="inline-flex min-h-6 items-center rounded-full bg-orbis-gold/15 px-2.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-orbis-gold-deep">
+                    DONE
+                  </span>
+                  {scenario.completedCount > 1
+                    ? `${scenario.completedCount} times`
+                    : null}
+                </>
+              ) : (
+                attemptStatusLabel(scenario.attemptStatus)
+              )}
             </p>
             {scenario.status === "enabled" ? (
               <div className="mt-4 flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => onStart(scenario)}
-                  disabled={pendingId !== null}
-                  className={`${PRIMARY_BUTTON} w-full`}
-                >
-                  {pendingId === `${scenario.worldId}:${scenario.id}` &&
-                  pendingKind === "open"
-                    ? scenario.activeSessionId
-                      ? "Opening…"
-                      : "Starting…"
-                    : scenario.activeSessionId
-                      ? "Continue"
-                      : "Enter scene"}
-                </button>
                 {scenario.activeSessionId ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => onStart(scenario)}
+                      disabled={pendingId !== null}
+                      className={`${PRIMARY_BUTTON} w-full`}
+                    >
+                      {pendingId === `${scenario.worldId}:${scenario.id}` &&
+                      pendingKind === "open"
+                        ? "Opening…"
+                        : "Continue"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onRestart(scenario)}
+                      disabled={pendingId !== null}
+                      className={`${SECONDARY_BUTTON} w-full`}
+                    >
+                      {pendingId === `${scenario.worldId}:${scenario.id}` &&
+                      pendingKind === "restart"
+                        ? "Starting…"
+                        : scenario.completedCount > 0
+                          ? "Try again"
+                          : "Start over"}
+                    </button>
+                  </>
+                ) : scenario.completedCount > 0 ? (
                   <button
                     type="button"
                     onClick={() => onRestart(scenario)}
                     disabled={pendingId !== null}
-                    className={`${SECONDARY_BUTTON} w-full`}
+                    className={`${PRIMARY_BUTTON} w-full`}
                   >
                     {pendingId === `${scenario.worldId}:${scenario.id}` &&
-                    pendingKind === "restart" ? (
-                      <>
-                        <span className="orbis-spinner mr-2" aria-hidden />
-                        Starting over…
-                      </>
-                    ) : (
-                      "Start over"
-                    )}
+                    pendingKind === "restart"
+                      ? "Starting…"
+                      : "Try again"}
                   </button>
-                ) : null}
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onStart(scenario)}
+                    disabled={pendingId !== null}
+                    className={`${PRIMARY_BUTTON} w-full`}
+                  >
+                    {pendingId === `${scenario.worldId}:${scenario.id}` &&
+                    pendingKind === "open"
+                      ? "Starting…"
+                      : "Enter scene"}
+                  </button>
+                )}
               </div>
             ) : null}
             </div>

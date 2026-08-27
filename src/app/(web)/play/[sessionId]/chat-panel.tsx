@@ -31,9 +31,25 @@ import { LevelBadge, PRIMARY_BUTTON, SECONDARY_BUTTON } from "../../ui/page-head
 import { EvaluationPanel } from "./evaluation-panel";
 import { MessageCheckCard, MessageCheckingStatus } from "./message-check-card";
 import { ComposerMicButton, VoiceDock } from "./voice-panel";
+import { BusyOverlay } from "../../ui/states";
 
 const POLL_MS = 2500;
 const MAX_POLLS = 36;
+
+const EVALUATION_COPY = [
+  {
+    title: "Scoring your mission…",
+    body: "Reading through the conversation.",
+  },
+  {
+    title: "Checking how natural it sounded…",
+    body: "This stays on until your results are ready.",
+  },
+  {
+    title: "Almost there…",
+    body: "Putting your feedback together.",
+  },
+] as const;
 
 export function ChatPanel({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -94,6 +110,22 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
       return { reply: result.reply };
     } catch (caught) {
       setPendingUserText(null);
+      if (caught instanceof ApiError && caught.status === 409) {
+        try {
+          const { session: fresh } = await orbisApi.getSession(current.id);
+          setSession(fresh);
+          if (inputMode === "text") {
+            setMessage("");
+          }
+          const reply =
+            [...fresh.turns]
+              .reverse()
+              .find((turn) => turn.role === "character")?.text ?? "";
+          return { reply };
+        } catch {
+          // Show the original send error below.
+        }
+      }
       if (inputMode === "text") {
         setMessage(text);
       }
@@ -116,7 +148,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
 
   const voice = useVoiceConversation({
     language: session?.language ?? "de",
-    enabled: Boolean(session && session.status === "active"),
+    enabled: Boolean(session && session.status === "active" && !completing),
     sendTurn: postTurn,
   });
 
@@ -228,10 +260,12 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
           const result = await orbisApi.getEvaluation(sessionId);
           if (!cancelled) {
             setEvaluation(result.evaluation);
+            setCompleting(false);
           }
           return;
         }
         if (status === "evaluation_failed") {
+          setCompleting(false);
           return;
         }
       } catch {
@@ -321,7 +355,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   }
 
   async function onRestart() {
-    if (!session || sending || completing || restarting) {
+    if (!session || restarting || evaluating) {
       return;
     }
     if (!isCefrLevel(session.level)) {
@@ -368,15 +402,19 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
       setSession(result.session);
       if (result.evaluation) {
         setEvaluation(result.evaluation);
+        setCompleting(false);
+        return;
+      }
+      if (result.session.status !== "processing") {
+        setCompleting(false);
       }
     } catch (caught) {
+      setCompleting(false);
       setError(
         caught instanceof ApiError || caught instanceof NetworkError
           ? caught.message
           : userFacingRequestError(caught),
       );
-    } finally {
-      setCompleting(false);
     }
   }
 
@@ -393,9 +431,10 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
   }
 
   const missionStatus = session.simulation?.status;
-  const missionEnded =
-    missionStatus === "successful" || missionStatus === "failed";
-  const active = session.status === "active" && !missionEnded;
+  const missionFailed = missionStatus === "failed";
+  const evaluating =
+    (completing || session.status === "processing") && !evaluation;
+  const active = session.status === "active" && !missionFailed;
   const processing = session.status === "processing";
   const failed = session.status === "evaluation_failed";
   const languageName =
@@ -409,7 +448,9 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
     sending ||
     Boolean(pendingUserText) ||
     voice.state.status === "responding";
-  const composerBusy = awaitingReply || completing || checking || restarting;
+  const composerBusy =
+    awaitingReply || completing || checking || restarting || evaluating;
+  const showComposer = active && !evaluating && !evaluation;
   const displayObjectives = session.simulation?.objectives ?? [];
   const requiredObjectives = displayObjectives.filter((item) => item.required);
   const openObjectives = requiredObjectives.filter(
@@ -471,23 +512,21 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
               English · {translationsOn ? "On" : "Off"}
             </button>
           ) : null}
-          {active ? (
-            <button
-              type="button"
-              onClick={() => void onRestart()}
-              disabled={composerBusy}
-              className={SECONDARY_BUTTON}
-            >
-              {restarting ? (
-                <>
-                  <span className="orbis-spinner mr-2" aria-hidden />
-                  Starting over…
-                </>
-              ) : (
-                "Start over"
-              )}
-            </button>
-          ) : null}
+          <button
+            type="button"
+            onClick={() => void onRestart()}
+            disabled={restarting || evaluating}
+            className={SECONDARY_BUTTON}
+          >
+            {restarting ? (
+              <>
+                <span className="orbis-spinner mr-2" aria-hidden />
+                Starting over…
+              </>
+            ) : (
+              "Start over"
+            )}
+          </button>
         </div>
       </header>
 
@@ -544,19 +583,15 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
 
       <div className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pb-3">
         {restarting ? (
-          <div
-            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#f6f3ec]/80 dark:bg-[#16130f]/80"
-            role="status"
-            aria-live="polite"
-          >
-            <span
-              className="orbis-spinner text-orbis-gold"
-              style={{ height: "1.75rem", width: "1.75rem", borderWidth: "3px" }}
-              aria-hidden
-            />
-            <p className="font-serif text-xl">Starting over…</p>
-            <p className="text-sm text-stone-500">Opening a fresh scene.</p>
-          </div>
+          <BusyOverlay title="Starting over…" body="Opening a fresh scene." />
+        ) : evaluating ? (
+          <EvaluationBusyOverlay
+            timedOut={timedOut}
+            onCheckAgain={() => {
+              setTimedOut(false);
+              setPollNonce((value) => value + 1);
+            }}
+          />
         ) : null}
         <section className="flex flex-col gap-2">
           {session.turns.map((turn) => (
@@ -587,7 +622,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
           <div ref={bottom} />
         </section>
 
-        {session.status === "active" && missionStatus === "failed" ? (
+        {session.status === "active" && missionFailed ? (
           <section className="orbis-card p-5">
             <h2 className="font-serif text-xl">Mission ended</h2>
             <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
@@ -605,56 +640,10 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
           </section>
         ) : null}
 
-        {session.status === "active" && missionStatus === "successful" ? (
-          <section className="orbis-card p-5">
-            <h2 className="font-serif text-xl">Mission complete</h2>
-            <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
-              Your conversation is being prepared for evaluation.
-            </p>
-            <button
-              type="button"
-              onClick={() => void onComplete()}
-              disabled={completing}
-              className={`${PRIMARY_BUTTON} mt-3 w-full sm:w-auto`}
-            >
-              {completing ? "Starting…" : "Continue to evaluation"}
-            </button>
-          </section>
-        ) : null}
-
         {!active && evaluation ? (
           <EvaluationPanel evaluation={evaluation} />
         ) : null}
-        {!active && processing ? (
-          <section className="orbis-card p-5">
-            <h2 className="font-serif text-xl">
-              {missionStatus === "successful" ? "Mission complete" : "Great job!"}
-            </h2>
-            <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
-              {timedOut
-                ? "Analysis is taking longer than expected. You can keep waiting or try again."
-                : "Your conversation is being evaluated..."}
-            </p>
-            {session.followUp && session.followUp.length > 0 ? (
-              <p className="mt-2 text-sm text-stone-500">
-                {session.followUp[0]}
-              </p>
-            ) : null}
-            {timedOut ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setTimedOut(false);
-                  setPollNonce((value) => value + 1);
-                }}
-                className={`${SECONDARY_BUTTON} mt-3`}
-              >
-                Check again
-              </button>
-            ) : null}
-          </section>
-        ) : null}
-        {!active && failed ? (
+        {!active && failed && !evaluating ? (
           <section className="orbis-card p-5">
             <h2 className="font-serif text-xl">Analysis failed</h2>
             <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
@@ -671,7 +660,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
             </button>
           </section>
         ) : null}
-        {!active && !evaluation && !processing && !failed ? (
+        {!active && !evaluation && !processing && !failed && !evaluating ? (
           <p className="text-sm text-zinc-500">Evaluation is not available yet.</p>
         ) : null}
         {!active && error ? (
@@ -679,7 +668,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
         ) : null}
       </div>
 
-      {active ? (
+      {showComposer ? (
         <div className="shrink-0 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom),var(--keyboard-inset,0px))]">
           <div className="rounded-[1.75rem] border border-stone-200/80 bg-white/80 p-3 shadow-[0_18px_40px_-24px_rgba(42,36,28,0.55)] backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/85">
             <VoiceDock
@@ -899,5 +888,42 @@ function PlayMessageButton({
     >
       <SpeakerIcon className="h-4 w-4" />
     </button>
+  );
+}
+
+function EvaluationBusyOverlay({
+  timedOut,
+  onCheckAgain,
+}: {
+  timedOut: boolean;
+  onCheckAgain: () => void;
+}) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (timedOut) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setIndex((value) => (value + 1) % EVALUATION_COPY.length);
+    }, 2800);
+    return () => window.clearInterval(timer);
+  }, [timedOut]);
+
+  const copy = timedOut
+    ? {
+        title: "Still working…",
+        body: "Analysis is taking longer than expected. You can keep waiting or check again.",
+      }
+    : EVALUATION_COPY[index] ?? EVALUATION_COPY[0];
+
+  return (
+    <BusyOverlay title={copy.title} body={copy.body}>
+      {timedOut ? (
+        <button type="button" onClick={onCheckAgain} className={SECONDARY_BUTTON}>
+          Check again
+        </button>
+      ) : null}
+    </BusyOverlay>
   );
 }

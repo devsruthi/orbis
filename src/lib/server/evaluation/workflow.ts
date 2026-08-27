@@ -108,20 +108,28 @@ async function finalizeAdaptiveLearning(
   });
 
   const reviewItems = await runStep(step, "update-review-items", async () => {
-    return syncReviewItemsFromEvaluation(
-      store,
-      finalized.session,
-      record,
-    );
+    try {
+      return await syncReviewItemsFromEvaluation(
+        store,
+        finalized.session,
+        record,
+      );
+    } catch {
+      return [];
+    }
   });
 
   await runStep(step, "schedule-review", async () => {
-    return queueDueReviews(
-      store,
-      events,
-      new Date().toISOString(),
-      finalized.session.learnerId,
-    );
+    try {
+      return await queueDueReviews(
+        store,
+        events,
+        new Date().toISOString(),
+        finalized.session.learnerId,
+      );
+    } catch {
+      return { queued: [] };
+    }
   });
 
   return {

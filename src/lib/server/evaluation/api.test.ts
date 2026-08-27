@@ -13,9 +13,13 @@ import {
 } from "@/lib/server/persistence";
 import { createId } from "@/lib/shared/ids";
 import { createMockClaude } from "@/test/mockClaude";
-import { createMockPublisher } from "@/test/mockPublisher";
+import { createFailingPublisher, createMockPublisher } from "@/test/mockPublisher";
 import { markRequiredObjectivesComplete } from "@/test/session-progress";
-import { runEvaluationWorkflow, immediateStep } from "@/lib/server/evaluation";
+import {
+  runEvaluationWorkflow,
+  immediateStep,
+  setEvaluatorForTests,
+} from "@/lib/server/evaluation";
 import { createMockEvaluator } from "@/test/mockEvaluator";
 
 describe("evaluation API", () => {
@@ -24,6 +28,7 @@ describe("evaluation API", () => {
   afterEach(async () => {
     setPersistenceForTests(undefined);
     setEventPublisherForTests(undefined);
+    setEvaluatorForTests(undefined);
     if (dir) {
       await rm(dir, { recursive: true, force: true });
     }
@@ -120,5 +125,40 @@ describe("evaluation API", () => {
       evaluation: { overallScore: number };
     };
     expect(body.evaluation.overallScore).toBe(78);
+  });
+
+  it("evaluates inline when event publishing is unavailable", async () => {
+    dir = await mkdtemp(path.join(tmpdir(), "orbis-eval-api-"));
+    const persistence = new JsonFilePersistence(dir);
+    setPersistenceForTests(persistence);
+    setEventPublisherForTests(createFailingPublisher());
+    setEvaluatorForTests(createMockEvaluator());
+    const sessions = createSessionService(persistence, {
+      claude: createMockClaude(["Guten Tag.", "Ja."]),
+      events: createFailingPublisher(),
+      evaluator: createMockEvaluator(),
+    });
+    const created = await sessions.createSession({
+      worldId: "germany",
+      scenarioId: "restaurant",
+      language: "de",
+      level: "A2",
+      learnerId: createId(),
+    });
+    await sessions.addTurn(created.id, "Einen Tisch, bitte.");
+    await markRequiredObjectivesComplete(persistence, created.id);
+
+    const response = await completeSession(new Request("http://orbis.test"), {
+      params: Promise.resolve({ id: created.id }),
+    });
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      status: string;
+      evaluation?: { overallScore: number };
+      session: { status: string };
+    };
+    expect(body.status).toBe("evaluated");
+    expect(body.session.status).toBe("evaluated");
+    expect(body.evaluation?.overallScore).toBe(78);
   });
 });

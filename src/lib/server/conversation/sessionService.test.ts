@@ -7,6 +7,7 @@ import { JsonFilePersistence } from "@/lib/server/persistence";
 import { ConversationError, createSessionService } from "./sessionService";
 import { createFailingClaude, createMockClaude } from "@/test/mockClaude";
 import { createMockPublisher, createFailingPublisher } from "@/test/mockPublisher";
+import { createMockEvaluator } from "@/test/mockEvaluator";
 import { createDefaultLearner } from "./learner";
 import { markRequiredObjectivesComplete } from "@/test/session-progress";
 
@@ -278,12 +279,13 @@ describe("session service", () => {
     expect(events.published).toHaveLength(0);
   });
 
-  it("leaves the session recoverable if event publishing fails", async () => {
+  it("evaluates inline when event publishing is unavailable", async () => {
     dir = await mkdtemp(path.join(tmpdir(), "orbis-sessions-"));
     const persistence = new JsonFilePersistence(dir);
     const sessions = createSessionService(persistence, {
       claude: createMockClaude(["Guten Tag.", "Ja."]),
       events: createFailingPublisher(),
+      evaluator: createMockEvaluator(),
     });
     const created = await sessions.createSession({
       ...input,
@@ -291,12 +293,12 @@ describe("session service", () => {
     });
     await sessions.addTurn(created.id, "Guten Tag.");
     await markRequiredObjectivesComplete(persistence, created.id);
-    await expect(sessions.completeSession(created.id)).rejects.toMatchObject({
-      status: 503,
-    });
-    const loaded = await persistence.getSession(created.id);
-    expect(loaded?.status).toBe("active");
-    expect(await persistence.getEvaluationsForSession(created.id)).toEqual([]);
+    const completed = await sessions.completeSession(created.id);
+    expect(completed.session.status).toBe("evaluated");
+    expect(completed.evaluation?.evaluation.overallScore).toBe(78);
+    expect(await persistence.getEvaluationsForSession(created.id)).toHaveLength(
+      1,
+    );
   });
 
   it("rejects unknown worlds, unknown scenarios, and unsupported levels", async () => {
@@ -487,5 +489,61 @@ describe("session service", () => {
     await expect(sessions.addTurn(created.id, "Hallo")).rejects.toMatchObject({
       status: 409,
     });
+  });
+
+  it("keeps the chat open after the last mission point instead of auto-completing", async () => {
+    const events = createMockPublisher();
+    const claude = createMockClaude(
+      ["Guten Morgen! Was darf es sein?", "Bitte schön. Auf Wiedersehen!"],
+      {
+        signals: [
+          { objectiveId: "greet", satisfied: true, evidence: "Guten Morgen" },
+          { objectiveId: "order", satisfied: true, evidence: "Brötchen" },
+          { objectiveId: "price", satisfied: true, evidence: "Was kostet" },
+          { objectiveId: "thanks", satisfied: true, evidence: "Danke schön" },
+        ],
+      },
+    );
+    const { sessions } = await service(claude, events);
+    const created = await sessions.createSession({
+      worldId: "germany",
+      scenarioId: "bakery",
+      language: "de",
+      level: "A1",
+      learnerId: createId(),
+    });
+
+    const turn = await sessions.addTurn(created.id, "Nein. Danke schön.");
+    expect(turn.complete).toBe(true);
+    expect(turn.session.status).toBe("active");
+    expect(turn.simulation.status).toBe("successful");
+    expect(events.published).toEqual([]);
+    expect(
+      turn.simulation.objectives.find((item) => item.id === "thanks")?.status,
+    ).toBe("completed");
+
+    const again = await sessions.addTurn(created.id, "Nein. Danke schön.");
+    expect(again.session.status).toBe("active");
+    expect(again.session.turns.filter((item) => item.role === "user")).toHaveLength(
+      2,
+    );
+  });
+
+  it("completes an objective when Claude marks it satisfied without evidence", async () => {
+    const claude = createMockClaude(["Guten Morgen.", "Gern geschehen."], {
+      signals: [{ objectiveId: "thanks", satisfied: true, evidence: "" }],
+    });
+    const { sessions } = await service(claude);
+    const created = await sessions.createSession({
+      worldId: "germany",
+      scenarioId: "bakery",
+      language: "de",
+      level: "A1",
+      learnerId: createId(),
+    });
+    const turn = await sessions.addTurn(created.id, "Danke schön.");
+    expect(
+      turn.simulation.objectives.find((item) => item.id === "thanks")?.status,
+    ).toBe("completed");
   });
 });

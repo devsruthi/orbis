@@ -6,12 +6,8 @@ import { useState } from "react";
 import { useLearnerDashboard } from "@/lib/client/use-dashboard";
 import { startErrorMessage, openScenario } from "@/lib/client/start-session";
 import { playPath } from "@/lib/client/routes";
-import {
-  accuracyPercent,
-  humanizeConcept,
-  pathHasStartedScene,
-} from "@/lib/client/labels";
-import { ErrorState, EmptyState, PageSkeleton } from "./ui/states";
+import { humanizeConcept, pathHasStartedScene } from "@/lib/client/labels";
+import { ErrorState, EmptyState, PageSkeleton, BusyOverlay } from "./ui/states";
 import { ScoreBar } from "./ui/score-bar";
 import { SetupFlow } from "./ui/setup-flow";
 import { CARD, PRIMARY_BUTTON, SectionLabel } from "./ui/page-header";
@@ -148,20 +144,21 @@ export function HomeDashboard() {
         </div>
       </header>
       {startError ? <p className="text-sm text-red-700">{startError}</p> : null}
+      {starting ? (
+        <BusyOverlay
+          variant="page"
+          title="Opening the scene…"
+          body="Getting the conversation ready."
+        />
+      ) : null}
 
       {hasProgress ? null : setupFlow}
 
-      <dl className="grid grid-cols-3 gap-2 text-sm sm:gap-3">
+      <dl className="grid grid-cols-2 gap-2 text-sm sm:gap-3">
         <div className={CARD}>
           <dt className="text-stone-500">Sessions</dt>
           <dd className="font-serif text-2xl tabular-nums sm:text-3xl">
             {data.summary.completedSessions}
-          </dd>
-        </div>
-        <div className={CARD}>
-          <dt className="text-stone-500">Accuracy</dt>
-          <dd className="font-serif text-2xl tabular-nums sm:text-3xl">
-            {accuracyPercent(data.summary.reviewAccuracy)}
           </dd>
         </div>
         <div className={CARD}>

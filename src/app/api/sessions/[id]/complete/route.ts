@@ -5,6 +5,7 @@ import { toPublicEvaluation, toPublicSession } from "@/lib/server/public";
 import { UuidSchema } from "@/lib/shared/schemas";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 90;
 
 export async function POST(
   _request: Request,

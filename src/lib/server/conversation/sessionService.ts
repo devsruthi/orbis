@@ -11,7 +11,13 @@ import {
   turnsToClaudeMessages,
   type ClaudeConversationPort,
 } from "@/lib/server/claude";
-import { finalizeEvaluatedSession } from "@/lib/server/evaluation/workflow";
+import type { EvaluationPort } from "@/lib/server/evaluation/types";
+import {
+  finalizeEvaluatedSession,
+  immediateStep,
+  markEvaluationFailed,
+  runEvaluationWorkflow,
+} from "@/lib/server/evaluation/workflow";
 import {
   getEventPublisher,
   type EventPublisher,
@@ -65,7 +71,11 @@ export type CompleteSessionResult = {
 
 export function createSessionService(
   store: Persistence = getPersistence(),
-  deps: { claude?: ClaudeConversationPort; events?: EventPublisher } = {},
+  deps: {
+    claude?: ClaudeConversationPort;
+    events?: EventPublisher;
+    evaluator?: EvaluationPort;
+  } = {},
 ) {
   const claude = deps.claude ?? createClaudeConversation();
   const events = deps.events ?? getEventPublisher();
@@ -269,7 +279,10 @@ export function createSessionService(
       }
 
       let simulation = hydrateSimulation(session);
-      if (simulation.missionStatus !== "active") {
+      if (
+        simulation.missionStatus === "failed" ||
+        simulation.missionStatus === "abandoned"
+      ) {
         throw new ConversationError(409, "This mission has already ended");
       }
 
@@ -309,7 +322,7 @@ export function createSessionService(
       simulation = applyObjectiveSignals(
         simulation,
         session.mission,
-        output.objectiveSignals ?? [],
+        signalsWithLearnerEvidence(output.objectiveSignals, text),
       );
       simulation = applyBranchChoice(
         simulation,
@@ -326,20 +339,13 @@ export function createSessionService(
       syncSessionFromSimulation(session, simulation);
 
       const saved = await store.saveSession(session);
-      let complete = false;
-      let resultSession = saved;
-      if (simulation.missionStatus === "successful") {
-        const finished = await this.completeSession(saved.id);
-        complete = true;
-        resultSession = finished.session;
-      }
 
       return {
         reply: output.reply,
-        simulation: publicSimulationFor(resultSession),
-        missionProgress: resultSession.missionProgress,
-        complete,
-        session: resultSession,
+        simulation: publicSimulationFor(saved),
+        missionProgress: saved.missionProgress,
+        complete: hydrateSimulation(saved).missionStatus === "successful",
+        session: saved,
       };
     },
 
@@ -369,7 +375,6 @@ export function createSessionService(
         throw new ConversationError(400, ready.reason);
       }
 
-      const previousStatus = session.status;
       session.status = "processing";
       await store.saveSession(session);
 
@@ -379,15 +384,27 @@ export function createSessionService(
           learnerId: session.learnerId,
         });
       } catch {
-        session.status =
-          previousStatus === "evaluation_failed"
-            ? "evaluation_failed"
-            : "active";
-        await store.saveSession(session);
-        throw new ConversationError(
-          503,
-          "Evaluation processing is not available.",
-        );
+        try {
+          const result = await runEvaluationWorkflow(session.id, {
+            step: immediateStep,
+            store,
+            events,
+            evaluator: deps.evaluator,
+          });
+          if (!result.evaluation) {
+            throw new Error("inline evaluation returned no result");
+          }
+          return {
+            session: result.session,
+            evaluation: result.evaluation,
+          };
+        } catch {
+          await markEvaluationFailed(session.id, store);
+          throw new ConversationError(
+            503,
+            "We could not finish evaluating this conversation. Please try again.",
+          );
+        }
       }
 
       return { session };
@@ -419,6 +436,17 @@ async function loadEvaluationForSession(
   }
   const forSession = await store.getEvaluationsForSession(session.id);
   return forSession[0] ?? null;
+}
+
+function signalsWithLearnerEvidence(
+  signals: { objectiveId: string; satisfied: boolean; evidence?: string }[] | undefined,
+  userText: string,
+) {
+  return (signals ?? []).map((signal) => ({
+    ...signal,
+    evidence:
+      signal.satisfied && !signal.evidence?.trim() ? userText : signal.evidence,
+  }));
 }
 
 function applyCharacterTurn(

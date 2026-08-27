@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "./page-header";
 
 export function PageSkeleton({ label }: { label: string }) {
@@ -59,6 +60,41 @@ export function EmptyState({
           {action.label}
         </Link>
       ) : null}
+    </div>
+  );
+}
+
+export function BusyOverlay({
+  title,
+  body,
+  variant = "inset",
+  children,
+}: {
+  title: string;
+  body?: string;
+  variant?: "inset" | "page";
+  children?: React.ReactNode;
+}) {
+  return (
+    <div
+      className={
+        variant === "page"
+          ? "fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#f6f3ec]/90 dark:bg-[#16130f]/90"
+          : "absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-[#f6f3ec]/80 dark:bg-[#16130f]/80"
+      }
+      role="status"
+      aria-live="polite"
+    >
+      <span
+        className="orbis-spinner text-orbis-gold"
+        style={{ height: "1.75rem", width: "1.75rem", borderWidth: "3px" }}
+        aria-hidden
+      />
+      <p className="font-serif text-xl">{title}</p>
+      {body ? (
+        <p className="max-w-xs text-center text-sm text-stone-500">{body}</p>
+      ) : null}
+      {children}
     </div>
   );
 }
