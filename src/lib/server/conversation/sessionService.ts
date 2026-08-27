@@ -45,7 +45,7 @@ import type {
   Turn,
 } from "@/lib/shared/models";
 import { ConversationError } from "./errors";
-import { createDefaultLearner, nowIso } from "./learner";
+import { createDefaultLearner, mergeLanguagePath, nowIso } from "./learner";
 
 export { ConversationError } from "./errors";
 
@@ -150,23 +150,42 @@ export function createSessionService(
             worldId: input.worldId,
           }),
         );
-      } else if (
-        learner.targetLanguage !== input.language ||
-        learner.cefrLevel !== input.level ||
-        learner.worldId !== input.worldId
-      ) {
-        learner = await store.saveLearner({
-          ...learner,
-          targetLanguage: input.language,
-          cefrLevel: input.level,
+      } else {
+        const languagePaths = mergeLanguagePath(learner, {
+          language: input.language,
+          level: input.level,
           worldId: input.worldId,
-          updatedAt: nowIso(),
         });
+        const pathStale = !learner.languagePaths.some(
+          (item) =>
+            item.language === input.language &&
+            item.level === input.level &&
+            item.worldId === input.worldId,
+        );
+        if (
+          learner.targetLanguage !== input.language ||
+          learner.cefrLevel !== input.level ||
+          learner.worldId !== input.worldId ||
+          pathStale
+        ) {
+          learner = await store.saveLearner({
+            ...learner,
+            targetLanguage: input.language,
+            cefrLevel: input.level,
+            worldId: input.worldId,
+            languagePaths,
+            updatedAt: nowIso(),
+          });
+        }
       }
 
       const priorCount = (
         await store.listSessionsForLearner(input.learnerId)
-      ).filter((session) => session.scenarioId === scenario.id).length;
+      ).filter(
+        (session) =>
+          session.scenarioId === scenario.id &&
+          session.worldId === input.worldId,
+      ).length;
       const variant = selectVariant(
         content.variants,
         input.learnerId,

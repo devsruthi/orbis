@@ -8,7 +8,9 @@ import { playPath } from "@/lib/client/routes";
 import {
   attemptStatusLabel,
   categoryMark,
+  enrolledPathLabel,
   humanizeConcept,
+  languageFlag,
 } from "@/lib/client/labels";
 import { ErrorState, PageSkeleton } from "../ui/states";
 import { SetupFlow } from "../ui/setup-flow";
@@ -25,6 +27,9 @@ const CATEGORY_TONE: Record<string, string> = {
   transport: "from-cyan-100/80 to-stone-50/40",
   everyday: "from-lime-100/80 to-stone-50/40",
 };
+
+type DashboardPath = DashboardResponse["paths"][number];
+type DashboardScenario = DashboardPath["categories"][number]["scenarios"][number];
 
 export function ExploreView() {
   const { data, loading, error, reload } = useLearnerDashboard();
@@ -49,39 +54,25 @@ export function ExploreView() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Choose a language first"
-          body="Orbis starts with a language, then a beginner CEFR level, then a mission."
+          body="Orbis starts with a language, then a beginner CEFR level, then a mission. You can add another language later."
         />
         <SetupFlow wizard onSaved={() => reload()} />
       </div>
     );
   }
 
-  const learner = data.learner;
-  const readyCategories = data.categories
-    .map((category) => ({
-      ...category,
-      scenarios: category.scenarios.filter((scenario) => scenario.status === "enabled"),
-    }))
-    .filter((category) => category.scenarios.length > 0);
-  const laterCategories = data.categories
-    .map((category) => ({
-      ...category,
-      scenarios: category.scenarios.filter((scenario) => scenario.status !== "enabled"),
-    }))
-    .filter((category) => category.scenarios.length > 0);
-
-  async function start(scenario: DashboardResponse["categories"][number]["scenarios"][number]) {
+  async function start(path: DashboardPath, scenario: DashboardScenario) {
     if (scenario.status !== "enabled") {
       return;
     }
-    setPendingId(scenario.id);
+    setPendingId(`${path.worldId}:${scenario.id}`);
     setStartError(null);
     try {
       const sessionId = await startScenario({
-        worldId: scenario.worldId,
+        worldId: path.worldId,
         scenarioId: scenario.id,
-        language: learner.language,
-        level: learner.level,
+        language: path.language,
+        level: path.level,
       });
       router.push(playPath(sessionId));
     } catch (caught) {
@@ -93,34 +84,66 @@ export function ExploreView() {
   return (
     <div className="flex min-w-0 flex-col gap-10">
       <PageHeader
-        kicker={`${data.learner.languageName} · ${data.learner.level}`}
         title="Missions"
-        body={`Step into everyday ${data.learner.languageName} life. Ready scenes can start now.`}
+        body={`Step into everyday life in ${enrolledPathLabel(data.paths) || "your languages"}. Ready scenes can start now.`}
       />
       {startError ? <p className="text-sm text-red-700">{startError}</p> : null}
 
-      {readyCategories.map((category) => (
-        <CategorySection
-          key={category.id}
-          category={category}
-          pendingId={pendingId}
-          onStart={start}
-        />
-      ))}
+      {data.paths.map((path) => {
+        const readyCategories = path.categories
+          .map((category) => ({
+            ...category,
+            scenarios: category.scenarios.filter(
+              (scenario) => scenario.status === "enabled",
+            ),
+          }))
+          .filter((category) => category.scenarios.length > 0);
+        const laterCategories = path.categories
+          .map((category) => ({
+            ...category,
+            scenarios: category.scenarios.filter(
+              (scenario) => scenario.status !== "enabled",
+            ),
+          }))
+          .filter((category) => category.scenarios.length > 0);
 
-      {laterCategories.length > 0 ? (
-        <div className="flex flex-col gap-8 opacity-80">
-          <SectionLabel>Coming later</SectionLabel>
-          {laterCategories.map((category) => (
-            <CategorySection
-              key={category.id}
-              category={category}
-              pendingId={pendingId}
-              onStart={start}
-            />
-          ))}
-        </div>
-      ) : null}
+        return (
+          <div key={path.language} className="flex min-w-0 flex-col gap-8">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="font-serif text-2xl font-medium tracking-tight">
+                <span aria-hidden>{languageFlag(path.language)} </span>
+                {path.languageName}
+                <span className="ml-2 text-base font-sans font-normal text-stone-500">
+                  {path.level}
+                </span>
+              </h2>
+            </div>
+
+            {readyCategories.map((category) => (
+              <CategorySection
+                key={`${path.language}-${category.id}`}
+                category={category}
+                pendingId={pendingId}
+                onStart={(scenario) => start(path, scenario)}
+              />
+            ))}
+
+            {laterCategories.length > 0 ? (
+              <div className="flex flex-col gap-8 opacity-80">
+                <SectionLabel>Coming later</SectionLabel>
+                {laterCategories.map((category) => (
+                  <CategorySection
+                    key={`${path.language}-later-${category.id}`}
+                    category={category}
+                    pendingId={pendingId}
+                    onStart={(scenario) => start(path, scenario)}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -130,11 +153,9 @@ function CategorySection({
   pendingId,
   onStart,
 }: {
-  category: DashboardResponse["categories"][number];
+  category: DashboardPath["categories"][number];
   pendingId: string | null;
-  onStart: (
-    scenario: DashboardResponse["categories"][number]["scenarios"][number],
-  ) => void;
+  onStart: (scenario: DashboardScenario) => void;
 }) {
   return (
     <section className="flex min-w-0 flex-col gap-4">
@@ -142,7 +163,7 @@ function CategorySection({
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {category.scenarios.map((scenario) => (
           <li
-            key={scenario.id}
+            key={`${scenario.worldId}-${scenario.id}`}
             className="orbis-card flex min-w-0 flex-col overflow-hidden p-0"
           >
             <div
@@ -184,7 +205,9 @@ function CategorySection({
                 disabled={pendingId !== null}
                 className={`${PRIMARY_BUTTON} mt-4 w-full`}
               >
-                {pendingId === scenario.id ? "Starting…" : "Enter scene"}
+                {pendingId === `${scenario.worldId}:${scenario.id}`
+                  ? "Starting…"
+                  : "Enter scene"}
               </button>
             ) : null}
             </div>

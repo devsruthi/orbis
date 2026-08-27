@@ -33,6 +33,12 @@ export function greetingForHour(hour: number): string {
   return "Good evening";
 }
 
+export function enrolledPathLabel(
+  paths: { languageName: string; level: string }[],
+): string {
+  return paths.map((path) => `${path.languageName} ${path.level}`).join(" · ");
+}
+
 export function formatRelativeTime(
   iso: string,
   now: Date = new Date(),

@@ -39,8 +39,48 @@ export function createDefaultLearner(input: {
     activeReviewConcepts: [],
     masteredConcepts: [],
     highestPriorityWeaknesses: [],
+    languagePaths: [
+      {
+        language: input.targetLanguage,
+        level: input.cefrLevel,
+        worldId: input.worldId,
+        addedAt: new Date().toISOString(),
+      },
+    ],
     updatedAt: new Date().toISOString(),
   };
+}
+
+export function mergeLanguagePath(
+  learner: LearnerProfile,
+  path: {
+    language: string;
+    level: CefrLevel;
+    worldId: string;
+  },
+  addedAt = new Date().toISOString(),
+): LearnerProfile["languagePaths"] {
+  const previous =
+    learner.languagePaths.length > 0
+      ? learner.languagePaths
+      : [
+          {
+            language: learner.targetLanguage,
+            level: learner.cefrLevel,
+            worldId: learner.worldId,
+            addedAt: learner.preferencesChosenAt ?? learner.updatedAt,
+          },
+        ];
+  const existing = previous.find((item) => item.language === path.language);
+  return [
+    ...previous.filter((item) => item.language !== path.language),
+    {
+      language: path.language,
+      level: path.level,
+      worldId: path.worldId,
+      addedAt: existing?.addedAt ?? addedAt,
+    },
+  ];
 }
 
 export function nowIso(): string {

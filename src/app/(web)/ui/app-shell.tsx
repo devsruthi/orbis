@@ -11,7 +11,6 @@ import {
   DashboardProvider,
   useLearnerDashboard,
 } from "@/lib/client/use-dashboard";
-import { greetingForLanguage, languageFlag } from "@/lib/client/labels";
 import {
   HomeIcon,
   MicIcon,
@@ -20,7 +19,7 @@ import {
   ProgressIcon,
   ReviewsIcon,
 } from "./icons";
-import { LevelBadge } from "./page-header";
+import { PathChips } from "./page-header";
 import { ThemeToggle } from "./theme-toggle";
 
 const LINKS = [
@@ -45,10 +44,12 @@ function AppShellFrame({ children }: { children: ReactNode }) {
   );
   const { data } = useLearnerDashboard();
   const learner = data?.learner;
+  const paths = data?.paths ?? [];
   const recommendation = data?.recommendations[0];
   const recommendedScenario = recommendation
-    ? data?.categories
-        .flatMap((category) => category.scenarios)
+    ? paths
+        .find((path) => path.language === recommendation.language)
+        ?.categories.flatMap((category) => category.scenarios)
         .find((scenario) => scenario.id === recommendation.scenarioId)
     : undefined;
   const missionProgress = recommendedScenario
@@ -83,22 +84,13 @@ function AppShellFrame({ children }: { children: ReactNode }) {
         </Link>
 
         {learner?.setupComplete ? (
-          <div className="mt-6 flex items-center gap-3 rounded-2xl bg-stone-50 px-3 py-3 dark:bg-zinc-900/80">
-            <span
-              aria-hidden
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-orbis-gold/20 text-lg"
-            >
-              {languageFlag(learner.language)}
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-serif text-lg leading-tight">
-                {greetingForLanguage(learner.language)}
-              </span>
-              <span className="mt-0.5 flex items-center gap-2 text-sm text-stone-500">
-                {learner.level} Learner
-                <LevelBadge level={learner.level} />
-              </span>
-            </span>
+          <div className="mt-6 rounded-2xl bg-stone-50 px-3 py-3 dark:bg-zinc-900/80">
+            <p className="text-[11px] uppercase tracking-[0.16em] text-stone-400">
+              In progress
+            </p>
+            <div className="mt-2">
+              <PathChips paths={paths} />
+            </div>
           </div>
         ) : null}
 
@@ -126,7 +118,7 @@ function AppShellFrame({ children }: { children: ReactNode }) {
               <span className="block h-16 bg-gradient-to-br from-amber-100 via-stone-100 to-emerald-100 dark:from-zinc-800 dark:to-zinc-900" />
               <span className="block px-3 py-3">
                 <span className="block text-[11px] uppercase tracking-[0.16em] text-stone-400">
-                  Current mission
+                  Next mission
                 </span>
                 <span className="mt-1 block font-medium leading-tight">
                   {recommendation.title}
@@ -154,8 +146,7 @@ function AppShellFrame({ children }: { children: ReactNode }) {
             <span>
               <span className="block font-medium">Voice mode</span>
               <span className="block text-xs text-stone-500">
-                Speak naturally
-                {learner?.languageName ? ` in ${learner.languageName}` : ""}.
+                Speak in a mission.
               </span>
             </span>
           </Link>
@@ -176,7 +167,7 @@ function AppShellFrame({ children }: { children: ReactNode }) {
                 ORBIS
               </span>
             </Link>
-            {learner?.setupComplete ? <LevelBadge level={learner.level} /> : null}
+            {learner?.setupComplete ? <PathChips paths={paths} /> : null}
           </div>
         </header>
 

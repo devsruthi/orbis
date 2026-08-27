@@ -6,6 +6,7 @@ import { playPath } from "@/lib/client/routes";
 import {
   formatRelativeTime,
   humanizeConcept,
+  languageFlag,
   percent,
   trendLabel,
 } from "@/lib/client/labels";
@@ -51,7 +52,7 @@ export function ProgressView() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
-          Overall
+          {data.paths.length > 1 ? "All languages" : "Overall"}
         </h2>
         {data.scoreHistory.length === 0 ? (
           <EmptyState
@@ -81,6 +82,106 @@ export function ProgressView() {
         )}
       </section>
 
+      {data.paths.map((path) => {
+        const points = data.scoreHistory.filter(
+          (point) => point.language === path.language,
+        );
+        const history = data.history.filter(
+          (session) => session.language === path.language,
+        );
+        const focus = data.weaknesses.filter(
+          (item) => item.language === path.language,
+        );
+        const skillScores = [
+          { label: "Grammar", value: averagePoints(points, "grammar") },
+          { label: "Vocabulary", value: averagePoints(points, "vocabulary") },
+          {
+            label: "Communication",
+            value: averagePoints(points, "communication"),
+          },
+          { label: "Naturalness", value: averagePoints(points, "naturalness") },
+          {
+            label: "Task completion",
+            value: averagePoints(points, "taskCompletion"),
+          },
+        ];
+        return (
+          <section key={path.language} className="flex flex-col gap-3">
+            <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
+              <span aria-hidden>{languageFlag(path.language)} </span>
+              {path.languageName} · {path.level}
+            </h2>
+            {points.length === 0 ? (
+              <EmptyState
+                title={`No ${path.languageName} sessions yet.`}
+                body="Progress for this language stays separate from the others."
+                action={{ href: "/explore", label: "Explore scenarios" }}
+              />
+            ) : (
+              <div className={`${CARD} sm:p-5`}>
+                <p className="font-serif text-4xl tabular-nums sm:text-5xl">
+                  {percent(path.averageOverall)}
+                </p>
+                <p className="mt-1 text-sm text-stone-500">
+                  {path.completedSessions}{" "}
+                  {path.completedSessions === 1 ? "session" : "sessions"}
+                </p>
+                <div className="mt-3">
+                  <Sparkline
+                    values={points.map((point) => point.overall)}
+                    label={`${path.languageName} overall score over time`}
+                  />
+                </div>
+                <div className="mt-4 flex flex-col gap-3">
+                  {skillScores.map((score) =>
+                    score.value === null ? null : (
+                      <ScoreBar
+                        key={score.label}
+                        label={score.label}
+                        value={score.value}
+                      />
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
+            {focus.length > 0 ? (
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {focus.map((item) => (
+                  <li key={`${path.language}-${item.concept}`} className={CARD}>
+                    <p className="font-medium">{humanizeConcept(item.concept)}</p>
+                    <p className="text-sm text-stone-500">
+                      {item.priority} priority · Appeared in {item.sessionCount}{" "}
+                      {item.sessionCount === 1 ? "session" : "sessions"}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {history.length > 0 ? (
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {history.map((session) => (
+                  <li key={session.id} className={`min-w-0 ${CARD}`}>
+                    <Link href={playPath(session.id)} className="block min-w-0">
+                      <p className="font-medium">{session.scenarioTitle}</p>
+                      <p className="text-sm text-stone-500">
+                        {session.level}
+                        {session.overallScore !== undefined
+                          ? ` · ${session.overallScore}%`
+                          : ""}
+                        {session.completedAt
+                          ? ` · ${formatRelativeTime(session.completedAt)}`
+                          : ""}
+                      </p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        );
+      })}
+
       <section className="flex flex-col gap-3">
         <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
           Your focus areas
@@ -92,11 +193,12 @@ export function ProgressView() {
         ) : (
           <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {data.weaknesses.map((item, index) => (
-              <li key={item.concept} className={CARD}>
+              <li key={`${item.language ?? "any"}-${item.concept}`} className={CARD}>
                 <p className="font-medium">
                   {index + 1}. {humanizeConcept(item.concept)}
                 </p>
                 <p className="text-sm text-stone-500">
+                  {item.language ? `${item.language.toUpperCase()} · ` : ""}
                   {item.priority} priority · Appeared in {item.sessionCount}{" "}
                   {item.sessionCount === 1 ? "session" : "sessions"}
                 </p>
@@ -128,6 +230,7 @@ export function ProgressView() {
         )}
       </section>
 
+      {data.paths.length > 1 ? null : (
       <section className="flex flex-col gap-3">
         <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
           History
@@ -160,6 +263,7 @@ export function ProgressView() {
           </ul>
         )}
       </section>
+      )}
 
       <section className="flex flex-col gap-4">
         <h2 className="text-xs font-medium uppercase tracking-[0.18em] text-stone-500">
@@ -201,6 +305,30 @@ export function ProgressView() {
       </section>
     </div>
   );
+}
+
+function averagePoints(
+  points: {
+    grammar?: number;
+    vocabulary?: number;
+    communication?: number;
+    naturalness?: number;
+    taskCompletion?: number;
+  }[],
+  key:
+    | "grammar"
+    | "vocabulary"
+    | "communication"
+    | "naturalness"
+    | "taskCompletion",
+): number | null {
+  const values = points
+    .map((point) => point[key])
+    .filter((value): value is number => value !== undefined);
+  if (values.length === 0) {
+    return null;
+  }
+  return Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
 }
 
 function achievementMark(id: string): string {

@@ -33,6 +33,13 @@ describe("learner preferences", () => {
     expect(learner.cefrLevel).toBe("A2");
     expect(learner.worldId).toBe("germany");
     expect(learner.preferencesChosenAt).toBeTruthy();
+    expect(learner.languagePaths).toEqual([
+      expect.objectContaining({
+        language: "de",
+        level: "A2",
+        worldId: "germany",
+      }),
+    ]);
     expect(await persistence.getLearner(id)).toEqual(learner);
   });
 
@@ -81,5 +88,36 @@ describe("learner preferences", () => {
       persistence,
     );
     expect(updated.completedSessionCount).toBe(3);
+  });
+
+  it("keeps German progress when the learner adds French", async () => {
+    const persistence = await store();
+    const id = createId();
+    await upsertLearnerPreferences(
+      { id, language: "de", level: "B1" },
+      persistence,
+    );
+    const updated = await upsertLearnerPreferences(
+      { id, language: "fr", level: "A1" },
+      persistence,
+    );
+    expect(updated.targetLanguage).toBe("fr");
+    expect(updated.cefrLevel).toBe("A1");
+    expect(updated.worldId).toBe("france");
+    expect(updated.languagePaths).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          language: "de",
+          level: "B1",
+          worldId: "germany",
+        }),
+        expect.objectContaining({
+          language: "fr",
+          level: "A1",
+          worldId: "france",
+        }),
+      ]),
+    );
+    expect(updated.languagePaths).toHaveLength(2);
   });
 });

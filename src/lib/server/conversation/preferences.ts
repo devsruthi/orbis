@@ -8,7 +8,7 @@ import {
 import type { CefrLevel } from "@/lib/shared/cefr";
 import type { LearnerProfile } from "@/lib/shared/models";
 import { ConversationError } from "./errors";
-import { createDefaultLearner } from "./learner";
+import { createDefaultLearner, mergeLanguagePath } from "./learner";
 
 export async function upsertLearnerPreferences(
   input: {
@@ -57,10 +57,21 @@ export async function upsertLearnerPreferences(
     cefrLevel: input.level,
     worldId: world.id,
   });
+  const path = {
+    language: input.language,
+    level: input.level,
+    worldId: world.id,
+  };
 
   if (!existing) {
     return store.createLearner({
       ...next,
+      languagePaths: [
+        {
+          ...path,
+          addedAt: next.updatedAt,
+        },
+      ],
       preferencesChosenAt: next.updatedAt,
     });
   }
@@ -70,6 +81,7 @@ export async function upsertLearnerPreferences(
     targetLanguage: next.targetLanguage,
     cefrLevel: next.cefrLevel,
     worldId: next.worldId,
+    languagePaths: mergeLanguagePath(existing, path, next.updatedAt),
     grammar: { ...next.grammar, ...existing.grammar },
     vocabulary: { ...next.vocabulary, ...existing.vocabulary },
     preferencesChosenAt: next.updatedAt,

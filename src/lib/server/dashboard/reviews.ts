@@ -57,6 +57,7 @@ export function orderedWeaknesses(
       sessionCount: history.get(item.concept) ?? item.incorrectCount,
       incorrectCount: item.incorrectCount,
       intensity: weaknessIntensity(item),
+      language: item.language,
     }));
 }
 

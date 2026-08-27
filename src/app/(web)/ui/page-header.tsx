@@ -1,3 +1,6 @@
+import Link from "next/link";
+import { languageFlag } from "@/lib/client/labels";
+
 export const CARD =
   "orbis-card p-5";
 
@@ -40,6 +43,34 @@ export function LevelBadge({ level }: { level: string }) {
     <span className="inline-flex min-h-6 items-center rounded-full bg-orbis-lilac/15 px-2.5 py-0.5 text-xs font-semibold text-orbis-lilac">
       {level}
     </span>
+  );
+}
+
+export function PathChips({
+  paths,
+}: {
+  paths: { language: string; languageName: string; level: string }[];
+}) {
+  if (paths.length === 0) {
+    return null;
+  }
+  return (
+    <Link
+      href="/progress"
+      className="flex flex-wrap items-center gap-1.5"
+      aria-label="Languages in progress"
+    >
+      {paths.map((path) => (
+        <span
+          key={path.language}
+          title={`${path.languageName} ${path.level}`}
+          className="inline-flex min-h-7 items-center gap-1 rounded-full bg-orbis-gold/12 px-2.5 py-0.5 text-xs font-medium text-orbis-dusk dark:text-[#f4efe6]"
+        >
+          <span aria-hidden>{languageFlag(path.language)}</span>
+          {path.level}
+        </span>
+      ))}
+    </Link>
   );
 }
 

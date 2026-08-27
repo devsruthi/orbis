@@ -540,6 +540,16 @@ export const LearnerProfileSchema = z.object({
   lastPracticeAt: z.string().optional(),
   lastReviewSyncEvaluationId: UuidSchema.optional(),
   preferencesChosenAt: z.string().optional(),
+  languagePaths: z
+    .array(
+      z.object({
+        language: LanguageCodeSchema,
+        level: CefrLevelSchema,
+        worldId: WorldIdSchema,
+        addedAt: z.string().min(1),
+      }),
+    )
+    .default([]),
   updatedAt: z.string().min(1),
 });
 
@@ -673,6 +683,7 @@ export const DashboardWeaknessSchema = z.object({
   sessionCount: z.number().int().nonnegative(),
   incorrectCount: z.number().int().nonnegative(),
   intensity: z.number().min(0).max(100),
+  language: LanguageCodeSchema.optional(),
 });
 
 export const DashboardSessionSchema = z.object({
@@ -690,6 +701,7 @@ export const DashboardSessionSchema = z.object({
 export const ScoreHistoryPointSchema = z.object({
   date: z.string().min(1),
   overall: ScoreSchema,
+  language: LanguageCodeSchema.optional(),
   grammar: ScoreSchema.optional(),
   vocabulary: ScoreSchema.optional(),
   communication: ScoreSchema.optional(),
@@ -702,6 +714,10 @@ export const DashboardRecommendationSchema = z.object({
   title: z.string().min(1),
   reason: z.string().min(1),
   priorityConcepts: z.array(z.string()),
+  worldId: WorldIdSchema,
+  language: LanguageCodeSchema,
+  languageName: z.string().min(1),
+  level: CefrLevelSchema,
 });
 
 export const DashboardScenarioSchema = z.object({
@@ -724,6 +740,16 @@ export const DashboardCategorySchema = z.object({
   id: CategoryIdSchema,
   title: z.string().min(1),
   scenarios: z.array(DashboardScenarioSchema),
+});
+
+export const DashboardLanguagePathSchema = z.object({
+  language: LanguageCodeSchema,
+  languageName: z.string().min(1),
+  level: CefrLevelSchema,
+  worldId: WorldIdSchema,
+  completedSessions: z.number().int().nonnegative(),
+  averageOverall: z.number().min(0).max(100).nullable(),
+  categories: z.array(DashboardCategorySchema),
 });
 
 export const DashboardAchievementSchema = z.object({
@@ -749,5 +775,6 @@ export const DashboardResponseSchema = z.object({
   scoreHistory: z.array(ScoreHistoryPointSchema),
   recommendations: z.array(DashboardRecommendationSchema),
   categories: z.array(DashboardCategorySchema),
+  paths: z.array(DashboardLanguagePathSchema),
   achievements: z.array(DashboardAchievementSchema),
 });

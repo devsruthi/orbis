@@ -5,11 +5,12 @@ import {
   listScenarios,
 } from "@/content";
 import { DEFAULT_CEFR_LEVEL } from "@/lib/shared/learning-options";
-import { getPracticeForLearner } from "@/lib/server/adaptive/practice";
+import { recommendNextPractice } from "@/lib/server/adaptive/selector";
 import { getPersistence, type Persistence } from "@/lib/server/persistence";
 import { z } from "zod";
 import { DashboardResponseSchema } from "@/lib/shared/schemas";
 import type {
+  CefrLevel,
   DashboardResponse,
   ReviewItem,
   Session,
@@ -29,6 +30,13 @@ import { learningStreak } from "./streak";
 const HISTORY_LIMIT = 20;
 const RECENT_LIMIT = 5;
 
+type EnrolledPath = {
+  language: string;
+  level: CefrLevel;
+  worldId: string;
+  addedAt: string;
+};
+
 export async function getLearnerDashboard(
   learnerId: string,
   store: Persistence = getPersistence(),
@@ -39,12 +47,12 @@ export async function getLearnerDashboard(
   const language = learner?.targetLanguage ?? "de";
   const level = learner?.cefrLevel ?? DEFAULT_CEFR_LEVEL;
   const languageName = getLanguage(language)?.displayName.en ?? language;
+  const enrolled = enrolledPaths(learner, language, level, worldId, now);
 
-  const [sessions, reviewItems, exercises, practice] = await Promise.all([
+  const [sessions, reviewItems, exercises] = await Promise.all([
     store.listSessionsForLearner(learnerId),
     store.listReviewItemsForLearner(learnerId),
     store.listReviewExercisesForLearner(learnerId),
-    getPracticeForLearner(learnerId, store, now),
   ]);
 
   const completed = sessions
@@ -62,6 +70,7 @@ export async function getLearnerDashboard(
         {
           date: session.completedAt ?? session.createdAt,
           overall: feedback.overallScore,
+          language: session.language,
           grammar: feedback.grammar,
           vocabulary: feedback.vocabulary,
           communication: feedback.communication,
@@ -96,34 +105,13 @@ export async function getLearnerDashboard(
     toDashboardSession(session),
   );
   const counts = reviewCounts(reviewItems, now);
-  const categories = listCategories(worldId).map((category) => ({
-    id: category.id,
-    title: category.title.en,
-    scenarios: listScenarios(worldId)
-      .filter((scenario) => scenario.categoryId === category.id)
-      .map((scenario) => {
-        const progress = scenarioAttemptStatus(sessions, scenario.id, now);
-        return {
-          id: scenario.id,
-          worldId: scenario.worldId,
-          categoryId: scenario.categoryId,
-          categoryTitle: category.title.en,
-          title: scenario.title.en,
-          status: scenario.status,
-          level: scenario.supportedLevels.includes(level)
-            ? level
-            : scenarioLevel(scenario),
-          language: scenario.supportedLanguages[0] ?? language,
-          supportedConcepts: scenario.supportedConcepts,
-          attemptStatus: progress.status,
-          completedCount: progress.completedCount,
-          ...(scenario.summary?.en ? { summary: scenario.summary.en } : {}),
-          ...(scenario.estimatedMinutes
-            ? { estimatedMinutes: scenario.estimatedMinutes }
-            : {}),
-        };
-      }),
-  }));
+  const paths = enrolled.map((path) =>
+    toDashboardPath(path, sessions, completed, now),
+  );
+  const categories =
+    paths.find((path) => path.worldId === worldId)?.categories ??
+    categoriesForWorld(worldId, language, level, sessions, now);
+  const recommendations = recommendationsForPaths(enrolled, reviewItems, language);
 
   const dashboard = {
     learner: {
@@ -162,10 +150,9 @@ export async function getLearnerDashboard(
     recentSessions: history.slice(0, RECENT_LIMIT),
     history,
     scoreHistory,
-    recommendations: practice.recommendation
-      ? [practice.recommendation]
-      : [],
+    recommendations,
     categories,
+    paths,
     achievements: learnerAchievements({
       completedSessions: completed.length,
       answeredReviews: exercises.filter((exercise) => exercise.status === "answered")
@@ -180,6 +167,160 @@ export async function getLearnerDashboard(
     throw parsed.error;
   }
   return parsed.data;
+}
+
+function enrolledPaths(
+  learner: {
+    languagePaths: EnrolledPath[];
+    targetLanguage: string;
+    cefrLevel: CefrLevel;
+    worldId: string;
+    preferencesChosenAt?: string;
+    updatedAt: string;
+  } | null,
+  language: string,
+  level: CefrLevel,
+  worldId: string,
+  now: string,
+): EnrolledPath[] {
+  if (!learner) {
+    return [
+      {
+        language,
+        level,
+        worldId,
+        addedAt: now,
+      },
+    ];
+  }
+  const paths =
+    learner.languagePaths.length > 0
+      ? learner.languagePaths
+      : [
+          {
+            language: learner.targetLanguage,
+            level: learner.cefrLevel,
+            worldId: learner.worldId,
+            addedAt: learner.preferencesChosenAt ?? learner.updatedAt,
+          },
+        ];
+  return [...paths].sort((a, b) => a.addedAt.localeCompare(b.addedAt));
+}
+
+function toDashboardPath(
+  path: EnrolledPath,
+  sessions: Session[],
+  completed: Session[],
+  now: string,
+): DashboardResponse["paths"][number] {
+  const pathCompleted = completed.filter(
+    (session) =>
+      session.language === path.language && session.worldId === path.worldId,
+  );
+  return {
+    language: path.language,
+    languageName: getLanguage(path.language)?.displayName.en ?? path.language,
+    level: path.level,
+    worldId: path.worldId,
+    completedSessions: pathCompleted.length,
+    averageOverall: averageScore(
+      compact(
+        pathCompleted.map((session) => session.feedback?.overallScore),
+      ),
+    ),
+    categories: categoriesForWorld(
+      path.worldId,
+      path.language,
+      path.level,
+      sessions,
+      now,
+    ),
+  };
+}
+
+function categoriesForWorld(
+  worldId: string,
+  language: string,
+  level: CefrLevel,
+  sessions: Session[],
+  now: string,
+) {
+  return listCategories(worldId).map((category) => ({
+    id: category.id,
+    title: category.title.en,
+    scenarios: listScenarios(worldId)
+      .filter((scenario) => scenario.categoryId === category.id)
+      .map((scenario) => {
+        const progress = scenarioAttemptStatus(
+          sessions,
+          scenario.id,
+          now,
+          worldId,
+        );
+        return {
+          id: scenario.id,
+          worldId: scenario.worldId,
+          categoryId: scenario.categoryId,
+          categoryTitle: category.title.en,
+          title: scenario.title.en,
+          status: scenario.status,
+          level: scenario.supportedLevels.includes(level)
+            ? level
+            : scenarioLevel(scenario),
+          language: scenario.supportedLanguages[0] ?? language,
+          supportedConcepts: scenario.supportedConcepts,
+          attemptStatus: progress.status,
+          completedCount: progress.completedCount,
+          ...(scenario.summary?.en ? { summary: scenario.summary.en } : {}),
+          ...(scenario.estimatedMinutes
+            ? { estimatedMinutes: scenario.estimatedMinutes }
+            : {}),
+        };
+      }),
+  }));
+}
+
+function recommendationsForPaths(
+  paths: EnrolledPath[],
+  reviewItems: ReviewItem[],
+  lastActiveLanguage: string,
+): DashboardResponse["recommendations"] {
+  const recs = compact(
+    paths.map((path) => recommendationForPath(path, reviewItems)),
+  );
+  return recs.sort((a, b) => {
+    if (a.language === lastActiveLanguage) {
+      return -1;
+    }
+    if (b.language === lastActiveLanguage) {
+      return 1;
+    }
+    return 0;
+  });
+}
+
+function recommendationForPath(
+  path: EnrolledPath,
+  reviewItems: ReviewItem[],
+): DashboardResponse["recommendations"][number] | null {
+  const recommendation = recommendNextPractice({
+    scenarios: listScenarios(path.worldId),
+    reviewItems: reviewItems.filter((item) => item.language === path.language),
+    language: path.language,
+    level: path.level,
+  });
+  if (!recommendation) {
+    return null;
+  }
+  const scenario = getScenario(recommendation.scenarioId, path.worldId);
+  return {
+    ...recommendation,
+    title: scenario?.title.en ?? recommendation.scenarioId,
+    worldId: path.worldId,
+    language: path.language,
+    languageName: getLanguage(path.language)?.displayName.en ?? path.language,
+    level: path.level,
+  };
 }
 
 function toDashboardSession(session: Session) {
@@ -221,6 +362,6 @@ function byCompletedAtDesc(a: Session, b: Session): number {
   );
 }
 
-function compact<T>(values: (T | undefined)[]): T[] {
-  return values.filter((value): value is T => value !== undefined);
+function compact<T>(values: (T | undefined | null)[]): T[] {
+  return values.filter((value): value is T => value != null);
 }

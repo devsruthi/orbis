@@ -32,6 +32,7 @@ const LANGUAGE_TONE: Record<string, string> = {
 export function SetupFlow(props: {
   currentLanguage?: string;
   currentLevel?: string;
+  paths?: { language: string; level: string }[];
   wizard?: boolean;
   compact?: boolean;
   onSaved: () => Promise<void> | void;
@@ -53,6 +54,10 @@ export function SetupFlow(props: {
     [level],
   );
   const readyLanguages = LEARNING_LANGUAGES.filter((item) => item.available);
+
+  const enrolledPaths = props.paths ?? [];
+  const enrolledFor = (code: string) =>
+    enrolledPaths.find((item) => item.language === code);
 
   async function save() {
     if (!language || !level || !isLanguageReady(language) || !isLevelReady(language, level)) {
@@ -84,10 +89,10 @@ export function SetupFlow(props: {
       setLevel("");
       return;
     }
+    const enrolled = enrolledFor(option.code);
     const nextLevel =
-      level && isLevelReady(option.code, level as CefrLevel)
-        ? (level as CefrLevel)
-        : defaultLevelFor(option.code);
+      (enrolled?.level as CefrLevel | undefined) ??
+      defaultLevelFor(option.code);
     setLevel(nextLevel ?? "");
     window.setTimeout(() => {
       levelSection.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -113,14 +118,20 @@ export function SetupFlow(props: {
     Boolean(level) &&
     isLanguageReady(language) &&
     isLevelReady(language, level as CefrLevel);
+  const enrolled = language ? enrolledFor(language) : undefined;
   const dirty =
-    language !== props.currentLanguage || level !== props.currentLevel;
+    Boolean(language) &&
+    Boolean(level) &&
+    (enrolled === undefined
+      ? language !== props.currentLanguage || level !== props.currentLevel
+      : enrolled.level !== level);
 
   const languagePicker = (
     <div className="flex flex-col gap-3">
       <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {readyLanguages.map((option) => {
           const on = language === option.code;
+          const enrolled = enrolledFor(option.code);
           return (
             <li key={option.code}>
               <button
@@ -154,6 +165,7 @@ export function SetupFlow(props: {
                     ].join(" ")}
                   >
                     {option.nativeName} · {option.worldName}
+                    {enrolled ? ` · ${enrolled.level}` : ""}
                   </span>
                   <span
                     className={[
@@ -169,10 +181,12 @@ export function SetupFlow(props: {
                     "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide",
                     on
                       ? "bg-white/15 text-white"
-                      : "bg-orbis-gold/10 text-orbis-gold",
+                      : enrolled
+                        ? "bg-orbis-gold/15 text-orbis-gold-deep"
+                        : "bg-orbis-gold/10 text-orbis-gold",
                   ].join(" ")}
                 >
-                  Ready
+                  {enrolled ? "In progress" : "Ready"}
                 </span>
               </button>
             </li>
@@ -244,9 +258,13 @@ export function SetupFlow(props: {
               Your path
             </p>
             <h2 className="font-serif text-2xl font-medium tracking-tight">
-              Language and level
+              Add or update a language
             </h2>
-            {selected?.available && selectedLevel ? (
+            {enrolledPaths.length > 0 ? (
+              <p className="text-sm text-stone-500">
+                Each language keeps its own level and progress.
+              </p>
+            ) : selected?.available && selectedLevel ? (
               <p className="text-sm text-stone-500">
                 {selected.name} in {selected.worldName} · {selectedLevel.id}{" "}
                 {selectedLevel.title.toLowerCase()}
@@ -275,7 +293,11 @@ export function SetupFlow(props: {
               disabled={saving}
               className={`${PRIMARY_BUTTON} self-start`}
             >
-              {saving ? "Saving…" : "Save path"}
+              {saving
+                ? "Saving…"
+                : enrolled
+                  ? "Update level"
+                  : "Add language"}
             </button>
           ) : null}
           {error ? <p className="text-sm text-red-700">{error}</p> : null}

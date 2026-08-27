@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { createDefaultLearner } from "@/lib/server/conversation/learner";
+import { upsertLearnerPreferences } from "@/lib/server/conversation/preferences";
 import { JsonFilePersistence } from "@/lib/server/persistence";
 import { createId } from "@/lib/shared/ids";
 import type {
@@ -64,6 +65,13 @@ describe("dashboard aggregation", () => {
     expect(dashboard.learner.setupComplete).toBe(false);
     expect(dashboard.learner.language).toBe("de");
     expect(dashboard.learner.level).toBe("A1");
+    expect(dashboard.paths).toHaveLength(1);
+    expect(dashboard.paths[0]).toMatchObject({
+      language: "de",
+      languageName: "German",
+      level: "A1",
+      worldId: "germany",
+    });
     expect(
       dashboard.categories.flatMap((category) => category.scenarios).filter(
         (scenario) => scenario.status === "enabled",
@@ -168,6 +176,53 @@ describe("dashboard aggregation", () => {
     });
     const after = await getLearnerDashboard(learner.id, store, NOW);
     expect(after.learner.setupComplete).toBe(true);
+  });
+
+  it("tracks German and French progress independently", async () => {
+    dir = await mkdtemp(path.join(tmpdir(), "orbis-dashboard-bilingual-"));
+    const store = new JsonFilePersistence(dir);
+    const learner = await upsertLearnerPreferences(
+      { id: createId(), language: "de", level: "A2" },
+      store,
+    );
+    await upsertLearnerPreferences(
+      { id: learner.id, language: "fr", level: "A1" },
+      store,
+    );
+    await store.createSession(
+      makeSession(learner.id, {
+        scenarioId: "apartment_viewing",
+        completedAt: "2026-03-10T10:00:00.000Z",
+        overallScore: 80,
+      }),
+    );
+
+    const dashboard = await getLearnerDashboard(learner.id, store, NOW);
+    expect(dashboard.paths.map((path) => path.language)).toEqual(["de", "fr"]);
+    expect(dashboard.paths.find((path) => path.language === "de")).toMatchObject({
+      completedSessions: 1,
+      level: "A2",
+      worldId: "germany",
+    });
+    expect(dashboard.paths.find((path) => path.language === "fr")).toMatchObject({
+      completedSessions: 0,
+      level: "A1",
+      worldId: "france",
+      averageOverall: null,
+    });
+    const germanApartment = dashboard.paths
+      .find((path) => path.language === "de")
+      ?.categories.flatMap((category) => category.scenarios)
+      .find((scenario) => scenario.id === "apartment_viewing");
+    const frenchApartment = dashboard.paths
+      .find((path) => path.language === "fr")
+      ?.categories.flatMap((category) => category.scenarios)
+      .find((scenario) => scenario.id === "apartment_viewing");
+    expect(germanApartment?.attemptStatus).toBe("recently_completed");
+    expect(frenchApartment?.attemptStatus).toBe("never");
+    expect(dashboard.recommendations.map((item) => item.language).sort()).toEqual(
+      ["de", "fr"],
+    );
   });
 });
 
@@ -301,6 +356,9 @@ function makeSession(
     status?: Session["status"];
     completedAt?: string;
     overallScore?: number;
+    worldId?: Session["worldId"];
+    language?: Session["language"];
+    level?: Session["level"];
   },
 ): Session {
   const completedAt = overrides.completedAt;
@@ -308,10 +366,10 @@ function makeSession(
   return {
     id: createId(),
     learnerId,
-    worldId: "germany",
+    worldId: overrides.worldId ?? "germany",
     scenarioId: overrides.scenarioId ?? "restaurant",
-    language: "de",
-    level: "A2",
+    language: overrides.language ?? "de",
+    level: overrides.level ?? "A2",
     status: overrides.status ?? "evaluated",
     mission: {
       title: { en: "Practice" },

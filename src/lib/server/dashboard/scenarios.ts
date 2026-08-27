@@ -11,8 +11,13 @@ export function scenarioAttemptStatus(
   sessions: Session[],
   scenarioId: string,
   now: string,
+  worldId?: string,
 ): { status: ScenarioAttemptStatus; completedCount: number } {
-  const matching = sessions.filter((session) => session.scenarioId === scenarioId);
+  const matching = sessions.filter(
+    (session) =>
+      session.scenarioId === scenarioId &&
+      (worldId ? session.worldId === worldId : true),
+  );
   if (matching.length === 0) {
     return { status: "never", completedCount: 0 };
   }

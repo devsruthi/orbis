@@ -2,26 +2,34 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLearnerDashboard } from "@/lib/client/use-dashboard";
 import { startErrorMessage, startScenario } from "@/lib/client/start-session";
 import { playPath } from "@/lib/client/routes";
 import {
   accuracyPercent,
-  greetingForLanguage,
+  enrolledPathLabel,
+  greetingForHour,
   humanizeConcept,
   languageFlag,
+  percent,
 } from "@/lib/client/labels";
 import { ErrorState, EmptyState, PageSkeleton } from "./ui/states";
 import { ScoreBar } from "./ui/score-bar";
 import { SetupFlow } from "./ui/setup-flow";
-import { CARD, LevelBadge, PRIMARY_BUTTON, SectionLabel } from "./ui/page-header";
+import { CARD, PRIMARY_BUTTON, SectionLabel } from "./ui/page-header";
+import type { DashboardResponse } from "@/lib/shared/models";
 
 export function HomeDashboard() {
   const { data, loading, error, reload } = useLearnerDashboard();
   const router = useRouter();
-  const [starting, setStarting] = useState(false);
+  const [starting, setStarting] = useState<string | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
+  const [hour, setHour] = useState<number | null>(null);
+
+  useEffect(() => {
+    setHour(new Date().getHours());
+  }, []);
 
   if (loading) {
     return <PageSkeleton label="Opening your world…" />;
@@ -33,6 +41,8 @@ export function HomeDashboard() {
   const recommendation = data.recommendations[0];
   const dueCount = data.reviews.counts.dueToday;
   const learner = data.learner;
+  const paths = data.paths;
+  const greeting = hour === null ? "Welcome back" : greetingForHour(hour);
 
   async function continuePractice() {
     if (dueCount > 0) {
@@ -43,39 +53,25 @@ export function HomeDashboard() {
       router.push("/explore");
       return;
     }
-    setStarting(true);
-    setStartError(null);
-    try {
-      const sessionId = await startScenario({
-        worldId: learner.worldId,
-        scenarioId: recommendation.scenarioId,
-        language: learner.language,
-        level: learner.level,
-      });
-      router.push(playPath(sessionId));
-    } catch (caught) {
-      setStartError(startErrorMessage(caught));
-      setStarting(false);
-    }
+    await startRecommended(recommendation);
   }
 
-  async function startRecommended() {
-    if (!recommendation) {
-      return;
-    }
-    setStarting(true);
+  async function startRecommended(
+    rec: DashboardResponse["recommendations"][number],
+  ) {
+    setStarting(`${rec.language}:${rec.scenarioId}`);
     setStartError(null);
     try {
       const sessionId = await startScenario({
-        worldId: learner.worldId,
-        scenarioId: recommendation.scenarioId,
-        language: learner.language,
-        level: learner.level,
+        worldId: rec.worldId,
+        scenarioId: rec.scenarioId,
+        language: rec.language,
+        level: rec.level,
       });
       router.push(playPath(sessionId));
     } catch (caught) {
       setStartError(startErrorMessage(caught));
-      setStarting(false);
+      setStarting(null);
     }
   }
 
@@ -91,7 +87,8 @@ export function HomeDashboard() {
           </h1>
           <p className="max-w-md text-base leading-relaxed text-stone-600 dark:text-zinc-400">
             Choose a language, start at beginner, then step into a real
-            situation.
+            situation. You can add another language later and keep progress
+            separate.
           </p>
         </header>
         <SetupFlow
@@ -109,14 +106,10 @@ export function HomeDashboard() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm text-stone-500">
-            <span aria-hidden="true">{languageFlag(learner.language)} </span>
-            {learner.languageName}
-            <span className="ml-2 align-middle">
-              <LevelBadge level={learner.level} />
-            </span>
+            {enrolledPathLabel(paths) || "Your languages"}
           </p>
           <h1 className="mt-2 font-serif text-4xl font-medium tracking-tight sm:text-5xl">
-            {greetingForLanguage(learner.language)}
+            {greeting}
           </h1>
           <p className="mt-2 max-w-md text-base text-stone-600 dark:text-zinc-400">
             {data.summary.completedSessions === 0
@@ -128,7 +121,7 @@ export function HomeDashboard() {
           <button
             type="button"
             onClick={() => void continuePractice()}
-            disabled={starting}
+            disabled={starting !== null}
             className={`${PRIMARY_BUTTON} w-full sm:w-auto`}
           >
             {starting ? "Starting…" : "Continue"}
@@ -167,45 +160,65 @@ export function HomeDashboard() {
         </div>
       </dl>
 
-      {recommendation ? (
-        <section className="flex flex-col gap-3">
-          <SectionLabel>Current mission</SectionLabel>
-          <div className={`flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between ${CARD}`}>
-            <div className="min-w-0">
-              <p className="font-serif text-2xl">{recommendation.title}</p>
-              <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
-                {recommendation.reason}
-              </p>
-              {recommendation.priorityConcepts.length > 0 ? (
-                <p className="mt-2 text-sm text-stone-500">
-                  Practice:{" "}
-                  {recommendation.priorityConcepts.map(humanizeConcept).join(" · ")}
+      <section className="flex flex-col gap-3">
+        <SectionLabel>Languages</SectionLabel>
+        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {paths.map((path) => {
+            const rec = data.recommendations.find(
+              (item) => item.language === path.language,
+            );
+            const pending =
+              rec !== undefined &&
+              starting === `${rec.language}:${rec.scenarioId}`;
+            return (
+              <li key={path.language} className={CARD}>
+                <p className="text-sm text-stone-500">
+                  <span aria-hidden>{languageFlag(path.language)} </span>
+                  {path.languageName} · {path.level}
                 </p>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              onClick={() => void startRecommended()}
-              disabled={starting}
-              className={`${PRIMARY_BUTTON} w-full sm:w-auto`}
-            >
-              {starting ? "Starting…" : "Enter scene"}
-            </button>
-          </div>
-        </section>
-      ) : (
-        <EmptyState
-          title="Explore the world"
-          body="Choose a situation and start speaking."
-          action={{ href: "/explore", label: "Explore missions" }}
-        />
-      )}
+                <p className="mt-1 font-serif text-3xl tabular-nums">
+                  {percent(path.averageOverall)}
+                </p>
+                <p className="mt-1 text-sm text-stone-500">
+                  {path.completedSessions === 0
+                    ? "No missions completed yet"
+                    : `${path.completedSessions} ${path.completedSessions === 1 ? "session" : "sessions"}`}
+                </p>
+                {rec ? (
+                  <div className="mt-4 flex flex-col gap-3">
+                    <div>
+                      <p className="font-medium">{rec.title}</p>
+                      <p className="mt-0.5 text-sm text-stone-600 dark:text-zinc-400">
+                        {rec.reason}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void startRecommended(rec)}
+                      disabled={starting !== null}
+                      className={`${PRIMARY_BUTTON} w-full`}
+                    >
+                      {pending ? "Starting…" : "Enter scene"}
+                    </button>
+                  </div>
+                ) : (
+                  <Link href="/explore" className="mt-4 inline-block text-sm underline">
+                    Browse missions
+                  </Link>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
 
       <SetupFlow
-        key={`${learner.language}-${learner.level}`}
+        key={paths.map((path) => `${path.language}-${path.level}`).join("|")}
         compact
-        currentLanguage={learner.language}
-        currentLevel={learner.level}
+        paths={paths.map((path) => ({
+          language: path.language,
+          level: path.level,
+        }))}
         onSaved={() => reload()}
       />
 
@@ -246,7 +259,7 @@ export function HomeDashboard() {
           <div className={`flex flex-col gap-3 ${CARD}`}>
             {data.weaknesses.map((item) => (
               <ScoreBar
-                key={item.concept}
+                key={`${item.language ?? "any"}-${item.concept}`}
                 label={`${humanizeConcept(item.concept)} · ${item.priority}`}
                 value={item.intensity}
               />
