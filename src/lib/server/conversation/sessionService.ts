@@ -150,6 +150,18 @@ export function createSessionService(
             worldId: input.worldId,
           }),
         );
+      } else if (
+        learner.targetLanguage !== input.language ||
+        learner.cefrLevel !== input.level ||
+        learner.worldId !== input.worldId
+      ) {
+        learner = await store.saveLearner({
+          ...learner,
+          targetLanguage: input.language,
+          cefrLevel: input.level,
+          worldId: input.worldId,
+          updatedAt: nowIso(),
+        });
       }
 
       const priorCount = (

@@ -6,6 +6,7 @@ export class ClaudeError extends Error {
     message: string,
     public readonly type:
       | "not_configured"
+      | "billing"
       | "rate_limit"
       | "timeout"
       | "invalid_output"

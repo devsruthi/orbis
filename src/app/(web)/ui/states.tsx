@@ -54,7 +54,7 @@ export function EmptyState({
       {action ? (
         <Link
           href={action.href}
-          className="mt-1 inline-flex self-start rounded-full bg-stone-900 px-4 py-2 text-sm text-white dark:bg-zinc-100 dark:text-zinc-900"
+          className="self-start rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white dark:bg-[#e07a3d] dark:text-zinc-950"
         >
           {action.label}
         </Link>

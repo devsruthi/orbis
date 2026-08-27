@@ -539,6 +539,7 @@ export const LearnerProfileSchema = z.object({
   reviewAccuracy: z.number().min(0).max(1).optional(),
   lastPracticeAt: z.string().optional(),
   lastReviewSyncEvaluationId: UuidSchema.optional(),
+  preferencesChosenAt: z.string().optional(),
   updatedAt: z.string().min(1),
 });
 
@@ -573,6 +574,13 @@ export const SessionSchema = z.object({
   createdAt: z.string().min(1),
   completedAt: z.string().optional(),
 });
+
+export const LearnerPreferencesBodySchema = z
+  .object({
+    language: LanguageCodeSchema,
+    level: CefrLevelSchema,
+  })
+  .strict();
 
 export const CreateSessionBodySchema = z
   .object({
@@ -622,6 +630,7 @@ export const DashboardLearnerSchema = z.object({
   languageName: z.string().min(1),
   level: CefrLevelSchema,
   worldId: WorldIdSchema,
+  setupComplete: z.boolean(),
 });
 
 export const DashboardSummarySchema = z.object({

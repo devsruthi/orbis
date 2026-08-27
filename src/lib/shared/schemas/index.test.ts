@@ -4,6 +4,7 @@ import {
   CreateSessionBodySchema,
   EvaluationSchema,
   LanguageCodeSchema,
+  LearnerPreferencesBodySchema,
   ReviewAnswerBodySchema,
   ScenarioIdSchema,
   ScoreSchema,
@@ -43,6 +44,16 @@ describe("Zod validation", () => {
     ).toBe(false);
     expect(
       CreateSessionBodySchema.safeParse({ ...body, learnerId: "not-a-uuid" })
+        .success,
+    ).toBe(false);
+  });
+
+  it("validates learner language and level preferences", () => {
+    expect(
+      LearnerPreferencesBodySchema.parse({ language: "de", level: "A2" }),
+    ).toEqual({ language: "de", level: "A2" });
+    expect(
+      LearnerPreferencesBodySchema.safeParse({ language: "de", level: "A3" })
         .success,
     ).toBe(false);
   });

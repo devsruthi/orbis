@@ -61,6 +61,9 @@ describe("dashboard aggregation", () => {
       mastered: 0,
     });
     expect(dashboard.recommendations[0]?.scenarioId).toBe("apartment_viewing");
+    expect(dashboard.learner.setupComplete).toBe(false);
+    expect(dashboard.learner.language).toBe("de");
+    expect(dashboard.learner.level).toBe("A2");
     expect(
       dashboard.categories.flatMap((category) => category.scenarios).filter(
         (scenario) => scenario.status === "enabled",
@@ -109,6 +112,7 @@ describe("dashboard aggregation", () => {
     );
 
     const dashboard = await getLearnerDashboard(learner.id, store, NOW);
+    expect(dashboard.learner.setupComplete).toBe(false);
     expect(dashboard.summary.completedSessions).toBe(3);
     expect(dashboard.summary.averageOverall).toBe(76);
     expect(dashboard.summary.trend).toBe("improving");
@@ -143,6 +147,27 @@ describe("dashboard aggregation", () => {
     expect(dashboard.achievements.find((item) => item.id === "first_scenario")?.unlocked).toBe(
       true,
     );
+  });
+
+  it("marks setup complete only after the learner chooses a language and level", async () => {
+    dir = await mkdtemp(path.join(tmpdir(), "orbis-dashboard-setup-"));
+    const store = new JsonFilePersistence(dir);
+    const learner = createDefaultLearner({
+      id: createId(),
+      targetLanguage: "de",
+      cefrLevel: "A2",
+      worldId: "germany",
+    });
+    await store.createLearner(learner);
+    const before = await getLearnerDashboard(learner.id, store, NOW);
+    expect(before.learner.setupComplete).toBe(false);
+
+    await store.saveLearner({
+      ...learner,
+      preferencesChosenAt: NOW,
+    });
+    const after = await getLearnerDashboard(learner.id, store, NOW);
+    expect(after.learner.setupComplete).toBe(true);
   });
 });
 

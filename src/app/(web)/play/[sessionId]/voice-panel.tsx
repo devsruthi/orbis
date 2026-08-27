@@ -37,7 +37,7 @@ export function VoicePanel(props: {
   return (
     <section
       aria-label="Voice conversation"
-      className="flex flex-col gap-3 rounded border border-zinc-200 p-3 dark:border-zinc-800"
+      className="flex flex-col gap-3 rounded-3xl border border-stone-200/80 bg-white/80 p-3 dark:border-zinc-800 dark:bg-zinc-900/70"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-medium">Voice</p>
@@ -52,8 +52,8 @@ export function VoicePanel(props: {
               className={[
                 "min-h-9 rounded px-2 py-1 text-xs",
                 state.speed === speed.id
-                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                  : "border border-zinc-300 dark:border-zinc-700",
+                  ? "rounded-full bg-[#c45c26] text-white"
+                  : "rounded-full border border-stone-300 dark:border-zinc-700",
               ].join(" ")}
             >
               {speed.label}
@@ -86,15 +86,15 @@ export function VoicePanel(props: {
       )}
 
       {state.status === "reviewing" ? (
-        <div className="flex flex-col gap-2 rounded bg-zinc-50 p-3 dark:bg-zinc-900">
-          <p className="text-sm text-zinc-500">You said:</p>
+        <div className="flex flex-col gap-2 rounded-2xl bg-[#efe6d6] p-3 dark:bg-zinc-800">
+          <p className="text-sm text-stone-500">You said:</p>
           <p className="whitespace-pre-wrap break-words">“{state.transcript}”</p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={props.onSendTranscript}
               disabled={props.disabled}
-              className="min-h-11 rounded bg-zinc-900 px-4 py-2 text-white dark:bg-zinc-100 dark:text-zinc-900"
+              className="min-h-11 rounded-full bg-[#c45c26] px-4 py-2 text-white disabled:opacity-60"
             >
               Send
             </button>
@@ -102,14 +102,14 @@ export function VoicePanel(props: {
               type="button"
               onClick={props.onTryAgain}
               disabled={props.disabled}
-              className="min-h-11 rounded border border-zinc-300 px-4 py-2 dark:border-zinc-700"
+              className="min-h-11 rounded-full border border-stone-300 px-4 py-2 dark:border-zinc-700"
             >
               Try again
             </button>
             <button
               type="button"
               onClick={props.onDiscard}
-              className="min-h-11 rounded px-3 py-2 text-sm text-zinc-500 underline"
+              className="min-h-11 rounded-full px-3 py-2 text-sm text-stone-500 underline"
             >
               Cancel
             </button>
@@ -223,7 +223,7 @@ function MicrophoneButton({
         "min-h-12 w-full rounded-full px-4 py-3 text-base font-medium",
         listening
           ? "bg-red-700 text-white"
-          : "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900",
+          : "bg-[#c45c26] text-white",
         busy && !listening ? "opacity-60" : "",
       ].join(" ")}
     >

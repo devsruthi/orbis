@@ -228,8 +228,8 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
 
   return (
     <main className="flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4">
-      <header className="flex flex-col gap-2">
-        <p className="text-sm text-zinc-500">
+      <header className="rounded-[1.75rem] bg-gradient-to-br from-[#3d2a22] to-[#2d4a3c] px-5 py-5 text-white">
+        <p className="text-sm text-white/70">
           <Link href="/" className="underline">
             Orbis
           </Link>
@@ -237,24 +237,24 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
           {` · ${session.language} ${session.level}`}
         </p>
         {session.location ? (
-          <p className="text-sm text-zinc-500">{session.location.name.en}</p>
+          <p className="mt-1 text-sm text-white/70">{session.location.name.en}</p>
         ) : null}
-        <h1 className="text-2xl font-semibold">{session.character.name}</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <h1 className="mt-2 text-2xl font-semibold">{session.character.name}</h1>
+        <p className="text-sm text-white/80">
           {session.character.role.en}
         </p>
         {session.mission ? (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-2 text-sm text-white/85">
             {session.mission.goal.en}
           </p>
         ) : null}
         {session.learnerFacingDisclaimer ? (
-          <p className="text-sm text-zinc-500">
+          <p className="mt-2 text-xs text-white/60">
             {session.learnerFacingDisclaimer}
           </p>
         ) : null}
         {session.simulation ? (
-          <ol className="mt-1 flex flex-col gap-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <ol className="mt-3 flex flex-col gap-1 text-sm text-white/85">
             {session.simulation.objectives.map((objective) => (
               <li key={objective.id} className="flex gap-2">
                 <span aria-hidden>
@@ -276,14 +276,14 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
         ) : null}
       </header>
 
-      <section className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto rounded border border-zinc-200 p-4 dark:border-zinc-800">
+      <section className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto rounded-[1.75rem] bg-white/80 p-4 dark:bg-zinc-900/70">
         {session.turns.map((turn) => (
           <div
             key={turn.id}
             className={
               turn.role === "user"
-                ? "self-end max-w-[85%] rounded bg-zinc-900 px-3 py-2 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                : "self-start max-w-[85%] rounded bg-zinc-100 px-3 py-2 dark:bg-zinc-800"
+                ? "self-end max-w-[85%] rounded-3xl bg-[#3d2a22] px-4 py-2.5 text-white"
+                : "self-start max-w-[85%] rounded-3xl bg-[#efe6d6] px-4 py-2.5 text-stone-900 dark:bg-zinc-800 dark:text-zinc-100"
             }
           >
             <p className="text-xs uppercase tracking-wide opacity-70">
@@ -310,9 +310,9 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
       </section>
 
       {session.status === "active" && missionStatus === "failed" ? (
-        <section className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
+        <section className="rounded-3xl bg-white/80 p-4 dark:bg-zinc-900/70">
           <h2 className="text-lg font-semibold">Mission ended</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
             {session.simulation?.currentSituation ??
               "This path is no longer open. You can still review the conversation."}
           </p>
@@ -320,7 +320,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
             type="button"
             onClick={() => void onComplete()}
             disabled={completing}
-            className="mt-3 rounded border border-zinc-300 px-4 py-2 disabled:opacity-60 dark:border-zinc-700"
+            className="mt-3 rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white disabled:opacity-60"
           >
             {completing ? "Starting…" : "See how you did"}
           </button>
@@ -328,16 +328,16 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
       ) : null}
 
       {session.status === "active" && missionStatus === "successful" ? (
-        <section className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
+        <section className="rounded-3xl bg-white/80 p-4 dark:bg-zinc-900/70">
           <h2 className="text-lg font-semibold">Mission complete ✓</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
             Your conversation is being prepared for evaluation.
           </p>
           <button
             type="button"
             onClick={() => void onComplete()}
             disabled={completing}
-            className="mt-3 rounded border border-zinc-300 px-4 py-2 disabled:opacity-60 dark:border-zinc-700"
+            className="mt-3 rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white disabled:opacity-60"
           >
             {completing ? "Starting…" : "Continue to evaluation"}
           </button>
@@ -347,7 +347,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
       {active ? (
         <form
           onSubmit={onSubmit}
-          className="sticky bottom-0 z-10 flex flex-col gap-2 bg-stone-50 pb-[max(0.5rem,env(safe-area-inset-bottom),var(--keyboard-inset,0px))] pt-2 dark:bg-zinc-950"
+          className="sticky bottom-0 z-10 flex flex-col gap-2 bg-background pb-[max(0.5rem,env(safe-area-inset-bottom),var(--keyboard-inset,0px))] pt-2"
         >
           <label htmlFor="orbis-message" className="sr-only">
             Your message
@@ -359,14 +359,14 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
             rows={3}
             maxLength={4000}
             placeholder="Write in the target language…"
-            className="min-h-[5.5rem] w-full rounded border border-zinc-300 p-3 dark:border-zinc-700 dark:bg-zinc-950"
+            className="min-h-[5.5rem] w-full rounded-2xl border border-stone-300 bg-white/80 p-3 dark:border-zinc-700 dark:bg-zinc-950"
             disabled={sending || completing}
           />
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="submit"
               disabled={sending || completing}
-              className="min-h-11 min-w-20 rounded bg-zinc-900 px-4 py-2 text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+              className="min-h-11 min-w-20 rounded-full bg-[#c45c26] px-4 py-2 text-white disabled:opacity-60"
             >
               {sending ? "Sending…" : "Send"}
             </button>
@@ -374,7 +374,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
               type="button"
               onClick={() => void onComplete()}
               disabled={sending || completing}
-              className="min-h-11 rounded border border-zinc-300 px-4 py-2 disabled:opacity-60 dark:border-zinc-700"
+              className="min-h-11 rounded-full border border-stone-300 px-4 py-2 disabled:opacity-60 dark:border-zinc-700"
             >
               {completing ? "Starting…" : "Complete session"}
             </button>
@@ -400,17 +400,17 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
       ) : evaluation ? (
         <EvaluationPanel evaluation={evaluation} />
       ) : processing ? (
-        <section className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
+        <section className="rounded-3xl bg-white/80 p-4 dark:bg-zinc-900/70">
           <h2 className="text-lg font-semibold">
             {missionStatus === "successful" ? "Mission complete ✓" : "Great job!"}
           </h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
             {timedOut
               ? "Analysis is taking longer than expected. You can keep waiting or try again."
               : "Your conversation is being evaluated..."}
           </p>
           {session.followUp && session.followUp.length > 0 ? (
-            <p className="mt-2 text-sm text-zinc-500">
+            <p className="mt-2 text-sm text-stone-500">
               {session.followUp[0]}
             </p>
           ) : null}
@@ -421,16 +421,16 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
                 setTimedOut(false);
                 setPollNonce((value) => value + 1);
               }}
-              className="mt-3 rounded border border-zinc-300 px-4 py-2 dark:border-zinc-700"
+              className="mt-3 rounded-full border border-stone-300 px-4 py-2 dark:border-zinc-700"
             >
               Check again
             </button>
           ) : null}
         </section>
       ) : failed ? (
-        <section className="rounded border border-zinc-200 p-4 dark:border-zinc-800">
+        <section className="rounded-3xl bg-white/80 p-4 dark:bg-zinc-900/70">
           <h2 className="text-lg font-semibold">Analysis failed</h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-stone-600 dark:text-zinc-400">
             We could not finish evaluating this conversation. Your chat is saved;
             you can retry analysis.
           </p>
@@ -438,7 +438,7 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
             type="button"
             onClick={() => void onComplete()}
             disabled={completing}
-            className="mt-3 rounded border border-zinc-300 px-4 py-2 disabled:opacity-60 dark:border-zinc-700"
+            className="mt-3 rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white disabled:opacity-60"
           >
             {completing ? "Retrying…" : "Retry analysis"}
           </button>

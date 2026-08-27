@@ -55,7 +55,7 @@ export function PracticeView() {
             {due.map((item) => (
               <li
                 key={item.id}
-                className="flex items-center justify-between gap-3"
+                className="flex items-center justify-between gap-3 rounded-3xl bg-white/80 p-4 dark:bg-zinc-900/70"
               >
                 <div className="min-w-0">
                   <p className="font-medium">{humanizeConcept(item.concept)}</p>
@@ -66,7 +66,7 @@ export function PracticeView() {
                 </div>
                 <Link
                   href={reviewPath(item.id)}
-                  className="shrink-0 rounded-full border border-stone-300 px-4 py-2 text-sm dark:border-zinc-700"
+                  className="shrink-0 rounded-full bg-[#c45c26] px-4 py-2 text-sm text-white"
                 >
                   Practice
                 </Link>
@@ -87,7 +87,7 @@ export function PracticeView() {
         ) : (
           <ul className="flex flex-col gap-3">
             {upcoming.map((item) => (
-              <li key={item.id} className="flex items-baseline justify-between gap-3">
+              <li key={item.id} className="flex items-baseline justify-between gap-3 rounded-3xl bg-white/70 px-4 py-3 dark:bg-zinc-900/60">
                 <p className="font-medium">{humanizeConcept(item.concept)}</p>
                 <p className="text-sm text-stone-500">
                   {formatDueLabel(item.nextReviewAt)}
@@ -109,7 +109,7 @@ export function PracticeView() {
         ) : (
           <ul className="flex flex-col gap-3">
             {recent.map((item) => (
-              <li key={item.id} className="flex items-baseline justify-between gap-3">
+              <li key={item.id} className="flex items-baseline justify-between gap-3 rounded-3xl bg-white/70 px-4 py-3 dark:bg-zinc-900/60">
                 <p className="font-medium">{humanizeConcept(item.concept)}</p>
                 <p className="text-sm text-stone-500">
                   {item.language.toUpperCase()} {item.difficulty}

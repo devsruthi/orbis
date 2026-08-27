@@ -193,6 +193,22 @@ export const orbisApi = {
     }>(`/api/learners/${learnerId}/next-practice`),
   getDashboard: (learnerId: string) =>
     request<DashboardResponse>(`/api/learners/${learnerId}/dashboard`),
+  saveLearnerPreferences: (
+    learnerId: string,
+    body: { language: string; level: string },
+  ) =>
+    request<{
+      learner: {
+        id: string;
+        language: string;
+        level: string;
+        worldId: string;
+        setupComplete: boolean;
+      };
+    }>(`/api/learners/${learnerId}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
   getReview: (reviewItemId: string, learnerId: string) =>
     request<{
       reviewItem: PublicReviewItem;

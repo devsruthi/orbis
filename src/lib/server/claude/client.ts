@@ -164,10 +164,18 @@ export function parseCharacterTurn(input: unknown): CharacterTurnOutput {
   return parsed.data;
 }
 
-function mapAnthropicError(
+function providerErrorText(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isLowCreditError(error: unknown): boolean {
+  return /credit balance is too low/i.test(providerErrorText(error));
+}
+
+export function mapAnthropicError(
   error: unknown,
-  latencyMs: number,
-  model: string,
+  latencyMs = 0,
+  model = getAnthropicModel(),
 ): ClaudeError {
   if (error instanceof ClaudeError) {
     return error;
@@ -179,6 +187,12 @@ function mapAnthropicError(
       503,
       "Conversation service is not configured.",
       "not_configured",
+    );
+  } else if (isLowCreditError(error)) {
+    mapped = new ClaudeError(
+      503,
+      "The conversation service cannot run until Anthropic credits are available.",
+      "billing",
     );
   } else if (error instanceof RateLimitError) {
     mapped = new ClaudeError(
@@ -213,6 +227,7 @@ function mapAnthropicError(
     latencyMs,
     model,
     errorType: mapped.type,
+    status: error instanceof APIError ? error.status : mapped.status,
   });
   return mapped;
 }

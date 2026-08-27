@@ -17,7 +17,7 @@ const SCORE_LABELS: { key: keyof Pick<
 
 export function EvaluationPanel({ evaluation }: { evaluation: PublicEvaluation }) {
   return (
-    <section className="flex flex-col gap-5 rounded border border-zinc-200 p-4 dark:border-zinc-800">
+    <section className="flex flex-col gap-5 rounded-3xl bg-white/80 p-5 dark:bg-zinc-900/70">
       <header className="flex flex-col gap-1">
         <h2 className="text-xl font-semibold">Your evaluation</h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -80,7 +80,7 @@ export function EvaluationPanel({ evaluation }: { evaluation: PublicEvaluation }
             {evaluation.mistakes.map((mistake, index) => (
               <li
                 key={`${mistake.concept}-${index}`}
-                className="rounded bg-zinc-50 p-3 text-sm dark:bg-zinc-900"
+                className="rounded-2xl bg-[#efe6d6] p-3 text-sm dark:bg-zinc-800"
               >
                 <p className="mb-2 text-xs uppercase tracking-wide text-zinc-500">
                   {mistake.category}

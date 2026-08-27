@@ -129,6 +129,7 @@ export async function getLearnerDashboard(
       languageName,
       level,
       worldId,
+      setupComplete: Boolean(learner?.preferencesChosenAt),
     },
     summary: {
       completedSessions: completed.length,

@@ -37,11 +37,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [immersive]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-stone-50 text-stone-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <header className="sticky top-0 z-20 border-b border-stone-200/80 bg-stone-50/95 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
+    <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-20 border-b border-stone-200/70 bg-[#f3eee4]/90 backdrop-blur dark:border-zinc-800 dark:bg-[#14110e]/90">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
-            Orbis
+          <Link href="/" className="flex items-center gap-2">
+            <span
+              aria-hidden
+              className="inline-block h-2.5 w-2.5 rounded-full bg-[#c45c26]"
+            />
+            <span className="text-lg font-semibold tracking-tight">Orbis</span>
           </Link>
           <nav aria-label="Main" className="hidden sm:block">
             <ul className="flex gap-1">
@@ -67,7 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {immersive ? null : (
       <nav
         aria-label="Main"
-        className="fixed inset-x-0 bottom-0 z-20 border-t border-stone-200 bg-stone-50/95 backdrop-blur sm:hidden dark:border-zinc-800 dark:bg-zinc-950/95"
+        className="fixed inset-x-0 bottom-0 z-20 border-t border-stone-200/80 bg-[#f3eee4]/95 backdrop-blur sm:hidden dark:border-zinc-800 dark:bg-[#14110e]/95"
       >
         <ul className="mx-auto grid max-w-3xl grid-cols-4">
           {LINKS.map((link) => (
@@ -107,7 +111,7 @@ function NavLink({
         "block text-center text-sm font-medium",
         stacked ? "px-2 py-3" : "rounded-full px-3 py-1.5",
         active
-          ? "text-stone-900 dark:text-white"
+          ? "text-[#c45c26]"
           : "text-stone-500 hover:text-stone-800 dark:text-zinc-400 dark:hover:text-zinc-100",
       ].join(" ")}
     >

@@ -24,7 +24,7 @@ export function Sparkline({
       role="img"
       aria-label={label}
       viewBox={`0 0 ${width} ${height}`}
-      className="h-20 w-full max-w-md text-stone-800 dark:text-zinc-200"
+      className="h-20 w-full max-w-md text-[#c45c26]"
     >
       <polyline
         fill="none"

@@ -8,6 +8,7 @@ export function logClaude(
     latencyMs?: number;
     errorType?: string;
     model?: string;
+    status?: number;
   },
 ): void {
   console.info("[orbis:claude]", event, details);

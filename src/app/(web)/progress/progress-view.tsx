@@ -90,7 +90,7 @@ export function ProgressView() {
         ) : (
           <ol className="flex flex-col gap-4">
             {data.weaknesses.map((item, index) => (
-              <li key={item.concept}>
+              <li key={item.concept} className="rounded-3xl bg-white/80 p-4 dark:bg-zinc-900/70">
                 <p className="font-medium">
                   {index + 1}. {humanizeConcept(item.concept)}
                 </p>
@@ -137,7 +137,7 @@ export function ProgressView() {
         ) : (
           <ul className="flex flex-col gap-4">
             {data.history.map((session) => (
-              <li key={session.id} className="min-w-0">
+              <li key={session.id} className="min-w-0 rounded-3xl bg-white/80 p-4 dark:bg-zinc-900/70">
                 <Link href={playPath(session.id)} className="block min-w-0">
                   <p className="font-medium">{session.scenarioTitle}</p>
                   <p className="text-sm text-stone-500">
@@ -163,7 +163,10 @@ export function ProgressView() {
         </h2>
         <ul className="flex flex-col gap-3">
           {data.achievements.map((item) => (
-            <li key={item.id} className="text-sm">
+            <li
+              key={item.id}
+              className="rounded-3xl bg-white/80 p-4 text-sm dark:bg-zinc-900/70"
+            >
               <p className={item.unlocked ? "font-medium" : "text-stone-500"}>
                 {item.unlocked ? "✓ " : ""}
                 {item.title}

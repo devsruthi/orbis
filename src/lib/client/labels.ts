@@ -118,8 +118,13 @@ export function attemptStatusLabel(
 }
 
 export function languageFlag(code: string): string {
-  if (code === "de") {
-    return "🇩🇪";
-  }
-  return "";
+  const flags: Record<string, string> = {
+    de: "🇩🇪",
+    es: "🇪🇸",
+    fr: "🇫🇷",
+    it: "🇮🇹",
+    ja: "🇯🇵",
+    en: "🇬🇧",
+  };
+  return flags[code] ?? "";
 }

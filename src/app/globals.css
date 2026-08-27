@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f3eee4;
+  --foreground: #1c1917;
+  --orbis-clay: #c45c26;
+  --orbis-forest: #2d4a3c;
+  --orbis-dusk: #3d2a22;
 }
 
 @theme inline {
@@ -14,13 +17,19 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #14110e;
+    --foreground: #f4efe6;
+    --orbis-clay: #e07a3d;
+    --orbis-forest: #8fbfa3;
+    --orbis-dusk: #f4efe6;
   }
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse at 12% -10%, rgba(196, 92, 38, 0.12), transparent 42%),
+    radial-gradient(ellipse at 100% 0%, rgba(45, 74, 60, 0.1), transparent 38%);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
@@ -30,4 +39,10 @@ html,
 body {
   min-height: 100%;
   min-height: 100dvh;
+}
+
+.orbis-hero {
+  background:
+    radial-gradient(120% 80% at 10% 0%, rgba(255, 214, 170, 0.35), transparent 55%),
+    linear-gradient(145deg, #3d2a22 0%, #2d4a3c 52%, #1c1917 100%);
 }

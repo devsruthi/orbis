@@ -52,10 +52,11 @@ describe("dashboard API", () => {
     });
     expect(stranger.status).toBe(200);
     const strangerBody = (await stranger.json()) as {
-      learner: { id: string };
+      learner: { id: string; setupComplete: boolean };
       history: unknown[];
     };
     expect(strangerBody.learner.id).toBe(other);
+    expect(strangerBody.learner.setupComplete).toBe(false);
     expect(strangerBody.history).toEqual([]);
   });
 });
