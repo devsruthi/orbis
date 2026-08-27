@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { ApiError, orbisApi } from "@/lib/client/api";
 import { languageFlag } from "@/lib/client/labels";
 import { getOrCreateLearnerId } from "@/lib/client/storage";
@@ -8,13 +9,13 @@ import { NetworkError, userFacingRequestError } from "@/lib/client/network";
 import {
   LEARNING_LANGUAGES,
   LEARNING_LEVELS,
-  defaultLevelFor,
   isLanguageReady,
   isLevelReady,
   type LearningLanguageOption,
 } from "@/lib/shared/learning-options";
 import type { CefrLevel } from "@/lib/shared/cefr";
 import { PRIMARY_BUTTON } from "./page-header";
+import { missionCoverFallback, WORLD_COVER_SRC } from "@/lib/client/mission-images";
 
 const LEVEL_SHORT: Record<CefrLevel, string> = {
   A1: "Beginner",
@@ -38,9 +39,13 @@ export function SetupFlow(props: {
   onSaved: () => Promise<void> | void;
 }) {
   const levelSection = useRef<HTMLElement>(null);
-  const [language, setLanguage] = useState(props.currentLanguage ?? "");
+  const [language, setLanguage] = useState(
+    props.currentLanguage ?? props.paths?.[0]?.language ?? "",
+  );
   const [level, setLevel] = useState<CefrLevel | "">(
-    (props.currentLevel as CefrLevel | undefined) ?? "",
+    (props.currentLevel as CefrLevel | undefined) ??
+      (props.paths?.[0]?.level as CefrLevel | undefined) ??
+      "",
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,16 +64,23 @@ export function SetupFlow(props: {
   const enrolledFor = (code: string) =>
     enrolledPaths.find((item) => item.language === code);
 
-  async function save() {
-    if (!language || !level || !isLanguageReady(language) || !isLevelReady(language, level)) {
+  async function savePath(nextLanguage: string, nextLevel: CefrLevel) {
+    if (
+      !isLanguageReady(nextLanguage) ||
+      !isLevelReady(nextLanguage, nextLevel)
+    ) {
+      return;
+    }
+    const enrolled = enrolledFor(nextLanguage);
+    if (enrolled?.level === nextLevel) {
       return;
     }
     setSaving(true);
     setError(null);
     try {
       await orbisApi.saveLearnerPreferences(getOrCreateLearnerId(), {
-        language,
-        level,
+        language: nextLanguage,
+        level: nextLevel,
       });
       await props.onSaved();
     } catch (caught) {
@@ -90,10 +102,7 @@ export function SetupFlow(props: {
       return;
     }
     const enrolled = enrolledFor(option.code);
-    const nextLevel =
-      (enrolled?.level as CefrLevel | undefined) ??
-      defaultLevelFor(option.code);
-    setLevel(nextLevel ?? "");
+    setLevel((enrolled?.level as CefrLevel | undefined) ?? "");
     window.setTimeout(() => {
       levelSection.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 50);
@@ -111,20 +120,14 @@ export function SetupFlow(props: {
     setLanguage(lang);
     setLevel(id);
     setError(null);
+    void savePath(lang, id);
   }
 
-  const canSave =
+  const canExplore =
     Boolean(language) &&
     Boolean(level) &&
-    isLanguageReady(language) &&
-    isLevelReady(language, level as CefrLevel);
+    (saving || enrolledFor(language)?.level === level);
   const enrolled = language ? enrolledFor(language) : undefined;
-  const dirty =
-    Boolean(language) &&
-    Boolean(level) &&
-    (enrolled === undefined
-      ? language !== props.currentLanguage || level !== props.currentLevel
-      : enrolled.level !== level);
 
   const languagePicker = (
     <div className="flex flex-col gap-3">
@@ -242,6 +245,13 @@ export function SetupFlow(props: {
             {selectedLevel.id === "A1" ? " · start here" : ""}
           </span>
           <span className="mt-1 block">{selectedLevel.blurb}</span>
+          {saving ? (
+            <span className="mt-1 block text-xs text-stone-400">Saving…</span>
+          ) : enrolled?.level === level ? (
+            <span className="mt-1 block text-xs text-orbis-gold-deep">
+              Saved for {selected?.name ?? "this language"}.
+            </span>
+          ) : null}
         </p>
       ) : (
         <p className="text-sm text-stone-500">Tap a level to choose it.</p>
@@ -251,58 +261,39 @@ export function SetupFlow(props: {
 
   if (props.compact) {
     return (
-      <section className="orbis-card overflow-hidden p-0">
-        <div className="flex flex-col gap-6 p-4 sm:p-6">
-          <header className="flex flex-col gap-1">
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-stone-500">
-              Your path
-            </p>
-            <h2 className="font-serif text-2xl font-medium tracking-tight">
-              Add or update a language
-            </h2>
-            {enrolledPaths.length > 0 ? (
-              <p className="text-sm text-stone-500">
-                Each language keeps its own level and progress.
+      <div className="flex flex-col gap-4">
+        <section className="orbis-card overflow-hidden p-0">
+          <div className="flex flex-col gap-6 p-4 sm:p-6">
+            <header className="flex flex-col gap-1">
+              <p className="text-xs font-medium uppercase tracking-[0.2em] text-stone-500">
+                Your path
               </p>
-            ) : selected?.available && selectedLevel ? (
+              <h2 className="font-serif text-2xl font-medium tracking-tight">
+                Choose a language and level
+              </h2>
               <p className="text-sm text-stone-500">
-                {selected.name} in {selected.worldName} · {selectedLevel.id}{" "}
-                {selectedLevel.title.toLowerCase()}
+                Then explore it. Step into a scene and start speaking.
               </p>
-            ) : null}
-          </header>
+            </header>
 
-          <div className="flex flex-col gap-3">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-orbis-gold">
-              Language
-            </p>
-            {languagePicker}
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-orbis-gold">
+                Language
+              </p>
+              {languagePicker}
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-orbis-gold">
+                Level
+              </p>
+              {levelPicker}
+            </div>
+            {error ? <p className="text-sm text-red-700">{error}</p> : null}
           </div>
-
-          <div className="flex flex-col gap-3">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-orbis-gold">
-              Level
-            </p>
-            {levelPicker}
-          </div>
-
-          {canSave && dirty ? (
-            <button
-              type="button"
-              onClick={() => void save()}
-              disabled={saving}
-              className={`${PRIMARY_BUTTON} self-start`}
-            >
-              {saving
-                ? "Saving…"
-                : enrolled
-                  ? "Update level"
-                  : "Add language"}
-            </button>
-          ) : null}
-          {error ? <p className="text-sm text-red-700">{error}</p> : null}
-        </div>
-      </section>
+        </section>
+        {canExplore ? <ExploreWorldCard /> : null}
+      </div>
     );
   }
 
@@ -332,23 +323,55 @@ export function SetupFlow(props: {
             What is your level?
           </h2>
           <p className="text-sm leading-relaxed text-stone-600 dark:text-zinc-400">
-            New learners start at A1. Tap a rung, then enter the world.
+            New learners start at A1. Tap a level and we save it.
           </p>
         </div>
         {levelPicker}
       </section>
 
-      {canSave ? (
-        <button
-          type="button"
-          onClick={() => void save()}
-          disabled={saving}
-          className={`${PRIMARY_BUTTON} w-full sm:w-auto`}
-        >
-          {saving ? "Saving…" : props.wizard ? "Enter the world" : "Save"}
-        </button>
-      ) : null}
+      {canExplore ? <ExploreWorldCard /> : null}
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
     </div>
+  );
+}
+
+function ExploreWorldCard() {
+  return (
+    <Link
+      href="/explore"
+      className="orbis-card grid min-h-[16rem] grid-cols-2 overflow-hidden p-0 transition hover:brightness-[1.02]"
+    >
+      <span className="flex flex-col justify-center p-5 sm:p-6">
+        <span className="block text-xs font-medium uppercase tracking-[0.2em] text-orbis-gold">
+          Start from here
+        </span>
+        <span className="mt-2 block font-serif text-2xl font-medium tracking-tight sm:text-3xl">
+          Enter your world
+        </span>
+        <span className="mt-3 block font-serif text-base italic text-stone-600 sm:text-lg dark:text-zinc-300">
+          “Don’t study the language. Live it.”
+        </span>
+        <span className="mt-2 block text-sm leading-relaxed text-stone-500">
+          Step into a bakery, a station, an office. Speak as if you already live
+          there.
+        </span>
+        <span className={`${PRIMARY_BUTTON} mt-5 self-start`}>Explore scenes</span>
+      </span>
+      <span className="relative min-h-[12rem] overflow-hidden bg-stone-200 dark:bg-zinc-900">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={WORLD_COVER_SRC}
+          alt=""
+          className="h-full w-full object-cover"
+          onError={(event) => {
+            if (event.currentTarget.dataset.fallback === "1") {
+              return;
+            }
+            event.currentTarget.dataset.fallback = "1";
+            event.currentTarget.src = missionCoverFallback("enter-world");
+          }}
+        />
+      </span>
+    </Link>
   );
 }

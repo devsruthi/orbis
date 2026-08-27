@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLearnerDashboard } from "@/lib/client/use-dashboard";
 import { startErrorMessage, startScenario } from "@/lib/client/start-session";
 import { playPath } from "@/lib/client/routes";
 import {
   accuracyPercent,
-  greetingForHour,
   humanizeConcept,
   languageFlag,
   pathHasStartedScene,
@@ -25,11 +24,6 @@ export function HomeDashboard() {
   const router = useRouter();
   const [starting, setStarting] = useState<string | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
-  const [hour, setHour] = useState<number | null>(null);
-
-  useEffect(() => {
-    setHour(new Date().getHours());
-  }, []);
 
   if (loading) {
     return <PageSkeleton label="Opening your world…" />;
@@ -42,14 +36,14 @@ export function HomeDashboard() {
   const dueCount = data.reviews.counts.dueToday;
   const learner = data.learner;
   const paths = data.paths;
-  const greeting = hour === null ? "Welcome back" : greetingForHour(hour);
   const startedPaths = paths.filter(pathHasStartedScene);
   const hasProgress = startedPaths.length > 0;
 
   const setupFlow = (
     <SetupFlow
-      key={paths.map((path) => `${path.language}-${path.level}`).join("|")}
       compact
+      currentLanguage={learner.language}
+      currentLevel={learner.level}
       paths={paths.map((path) => ({
         language: path.language,
         level: path.level,
@@ -121,14 +115,13 @@ export function HomeDashboard() {
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-serif text-4xl font-medium tracking-tight sm:text-5xl">
-            {greeting}
+            Step into the moment…
           </h1>
-          <p className="mt-2 max-w-md text-base text-stone-600 dark:text-zinc-400">
-            {hasProgress
-              ? data.summary.completedSessions === 0
-                ? "Your first mission is waiting."
-                : "Step back into the world."
-              : "Choose a language and level, then enter a scene to start your path."}
+          <p className="mt-2 max-w-xl text-base text-stone-600 dark:text-zinc-400">
+            AI-generated everyday situations.
+          </p>
+          <p className="mt-1 max-w-md text-base text-stone-600 dark:text-zinc-400">
+            Don’t study the language. Live it.
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">

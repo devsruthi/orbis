@@ -21,7 +21,6 @@ import {
   ReviewsIcon,
 } from "./icons";
 import { PathChips } from "./page-header";
-import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
 const LINKS = [
@@ -48,18 +47,6 @@ function AppShellFrame({ children }: { children: ReactNode }) {
   const learner = data?.learner;
   const paths = data?.paths ?? [];
   const startedPaths = paths.filter(pathHasStartedScene);
-  const recommendation = data?.recommendations[0];
-  const recommendedScenario = recommendation
-    ? paths
-        .find((path) => path.language === recommendation.language)
-        ?.categories.flatMap((category) => category.scenarios)
-        .find((scenario) => scenario.id === recommendation.scenarioId)
-    : undefined;
-  const missionProgress = recommendedScenario
-    ? recommendedScenario.completedCount > 0
-      ? 55
-      : 12
-    : 0;
 
   useEffect(() => bindHistoryBackNavigation(), []);
 
@@ -84,11 +71,16 @@ function AppShellFrame({ children }: { children: ReactNode }) {
 
           <Link
             href="/"
-            className="mt-5 flex items-center gap-2 px-2 py-1 text-orbis-gold"
+            className="mt-5 flex items-start gap-2 px-2 py-1 text-orbis-gold"
           >
-            <OrbitMark className="h-7 w-7" />
-            <span className="font-serif text-2xl tracking-wide text-foreground">
-              ORBIS
+            <OrbitMark className="mt-0.5 h-7 w-7 shrink-0" />
+            <span className="min-w-0">
+              <span className="block font-serif text-2xl tracking-wide text-foreground">
+                ORBIS
+              </span>
+              <span className="mt-0.5 block text-sm leading-snug text-stone-500 dark:text-zinc-400">
+                AI Language Immersion Simulator
+              </span>
             </span>
           </Link>
 
@@ -121,32 +113,6 @@ function AppShellFrame({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="mt-6 flex flex-col gap-3 pb-4">
-            {recommendation ? (
-              <Link
-                href="/explore"
-                className="overflow-hidden rounded-2xl border border-stone-200/80 bg-stone-50 dark:border-zinc-800 dark:bg-zinc-900/70"
-              >
-                <span className="block h-16 bg-gradient-to-br from-amber-100 via-stone-100 to-emerald-100 dark:from-zinc-800 dark:to-zinc-900" />
-                <span className="block px-3 py-3">
-                  <span className="block text-[11px] uppercase tracking-[0.16em] text-stone-400">
-                    Next mission
-                  </span>
-                  <span className="mt-1 block font-medium leading-tight">
-                    {recommendation.title}
-                  </span>
-                  <span
-                    className="mt-2 block h-1.5 overflow-hidden rounded-full bg-stone-200 dark:bg-zinc-800"
-                    aria-hidden
-                  >
-                    <span
-                      className="block h-full rounded-full bg-orbis-gold"
-                      style={{ width: `${missionProgress}%` }}
-                    />
-                  </span>
-                </span>
-              </Link>
-            ) : null}
-
             <Link
               href={learner?.setupComplete ? "/explore" : "/"}
               className="flex items-center gap-3 rounded-2xl bg-orbis-gold/12 px-3 py-3 text-sm text-orbis-gold-deep"
@@ -165,10 +131,7 @@ function AppShellFrame({ children }: { children: ReactNode }) {
         </div>
 
         <div className="shrink-0 px-4 py-4">
-          <div className="flex items-center justify-between px-1">
-            <ThemeToggle />
-          </div>
-          <p className="mt-3 px-1 text-[11px] text-stone-400">Made with care by Orbis.</p>
+          <p className="px-1 text-[11px] text-stone-400">Made with care by Orbis.</p>
         </div>
       </aside>
 

@@ -61,3 +61,5 @@ export function missionCoverSrc(scenarioId: string, categoryId: string): string 
     missionCoverFallback(scenarioId)
   );
 }
+
+export const WORLD_COVER_SRC = pexels(3184418);
