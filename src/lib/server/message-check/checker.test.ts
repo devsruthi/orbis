@@ -83,6 +83,29 @@ describe("message checker (mocked Claude)", () => {
     expect(output.issues).toEqual([]);
   });
 
+  it("does not ask for a correction when the typed message is already correct", async () => {
+    const checker = createMessageChecker(async () => ({
+      ok: false,
+      corrected: "Einen Kaffee bitte.",
+      issues: [
+        {
+          category: "grammar",
+          original: "Einen Kaffee bitte",
+          correction: "Einen Kaffee bitte.",
+          explanation: "Add a period.",
+        },
+      ],
+    }));
+    const output = await checker.check({
+      message: "Einen Kaffee bitte",
+      languageCode: "de",
+      languageName: "German",
+      level: "A1",
+    });
+    expect(output.ok).toBe(true);
+    expect(output.issues).toEqual([]);
+  });
+
   it("rejects invalid Claude output without exposing internals", async () => {
     const checker = createMessageChecker(async () => ({ ok: "maybe" }));
     await expect(

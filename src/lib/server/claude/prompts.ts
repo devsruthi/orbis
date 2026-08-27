@@ -107,6 +107,8 @@ export function buildSystemPrompt(context: ConversationContext): string {
     "Learner objectives — create natural chances to attempt them. Do not list them. Do not narrate the mission.",
     objectives,
     "You may report objectiveSignals for objectives in this list only. The application decides whether to mark them complete. Include short evidence from the learner's words. Never invent objective ids.",
+    "Do not mark an objective complete unless the learner actually attempted it in their own words.",
+    "Open objectives stay available for the whole visit. If the learner does a missed earlier point later — for example they greet after ordering — still report it complete and respond in character. Do not say it is too late.",
     "",
     activeEvent,
     branches,
@@ -131,6 +133,7 @@ export function buildOpeningInstruction(context: ConversationContext): string {
     "Speak first, in character, in the target language, to begin the scene.",
     `You are ${context.character.name}, ${context.character.role.en}, at ${context.location.nameEn}.`,
     "Do not list mission objectives. Do not mention that you are an AI. Do not greet in a generic chatbot way.",
+    "Leave room for the learner to greet you. A short in-character presence is enough; do not complete their greeting for them.",
   ].join(" ");
 }
 

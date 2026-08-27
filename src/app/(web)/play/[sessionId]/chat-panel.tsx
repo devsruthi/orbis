@@ -25,6 +25,7 @@ import { restartScenario, startErrorMessage } from "@/lib/client/start-session";
 import { playPath } from "@/lib/client/routes";
 import { languageOption } from "@/lib/shared/learning-options";
 import { isCefrLevel } from "@/lib/shared/cefr";
+import { finalizeMessageCheck } from "@/lib/shared/message-check";
 import { GlobeIcon, HomeIcon, SendIcon, SpeakerIcon } from "../../ui/icons";
 import { LevelBadge, PRIMARY_BUTTON, SECONDARY_BUTTON } from "../../ui/page-header";
 import { EvaluationPanel } from "./evaluation-panel";
@@ -288,7 +289,10 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
     setChecking(true);
     setError(null);
     try {
-      const result = await orbisApi.checkMessage(session.id, text);
+      const result = finalizeMessageCheck(
+        text,
+        await orbisApi.checkMessage(session.id, text),
+      );
       if (result.ok || result.issues.length === 0) {
         setChecking(false);
         await deliverTurn(text);
@@ -406,11 +410,13 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
     Boolean(pendingUserText) ||
     voice.state.status === "responding";
   const composerBusy = awaitingReply || completing || checking || restarting;
-  const requiredObjectives =
-    session.simulation?.objectives.filter((item) => item.required) ?? [];
+  const displayObjectives = session.simulation?.objectives ?? [];
+  const requiredObjectives = displayObjectives.filter((item) => item.required);
+  const openObjectives = requiredObjectives.filter(
+    (item) => item.status !== "completed" && item.status !== "failed",
+  );
   const objectivesComplete =
-    requiredObjectives.length > 0 &&
-    requiredObjectives.every((item) => item.status === "completed");
+    requiredObjectives.length > 0 && openObjectives.length === 0;
 
   return (
     <main className="flex h-full min-h-0 w-full min-w-0 flex-col">
@@ -479,25 +485,54 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
       </header>
 
       {session.simulation ? (
-        <ol className="flex shrink-0 flex-wrap gap-x-4 gap-y-1 pb-3 text-sm text-stone-600 dark:text-zinc-400">
-          {session.simulation.objectives.map((objective) => (
-            <li key={objective.id} className="flex gap-2">
-              <span aria-hidden>
-                {objective.status === "completed"
-                  ? "✓"
-                  : objective.status === "failed"
-                    ? "×"
-                    : "○"}
-              </span>
-              <span>
-                {objective.label}
-                <span className="sr-only">
-                  {`, ${objective.status.replace("_", " ")}`}
-                </span>
-              </span>
-            </li>
-          ))}
-        </ol>
+        <div className="flex shrink-0 flex-col gap-2 pb-3">
+          <ol className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            {displayObjectives.map((objective) => {
+              const open =
+                objective.status !== "completed" && objective.status !== "failed";
+              return (
+                <li
+                  key={objective.id}
+                  className={[
+                    "flex gap-2",
+                    objective.status === "completed"
+                      ? "text-stone-400"
+                      : objective.status === "failed"
+                        ? "text-red-700"
+                        : "font-medium text-orbis-dusk dark:text-[#f4efe6]",
+                  ].join(" ")}
+                >
+                  <span aria-hidden>
+                    {objective.status === "completed"
+                      ? "✓"
+                      : objective.status === "failed"
+                        ? "×"
+                        : "○"}
+                  </span>
+                  <span>
+                    {objective.label}
+                    <span className="sr-only">
+                      {`, ${objective.status.replace("_", " ")}`}
+                    </span>
+                    {open && objective.required ? (
+                      <span className="sr-only">, still open</span>
+                    ) : null}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+          {active && openObjectives.length > 0 ? (
+            <p className="text-sm text-stone-600 dark:text-zinc-400">
+              Still open:{" "}
+              {openObjectives.map((item) => item.label).join(" · ")}. Say{" "}
+              {openObjectives.length === 1 ? "this" : "these"} in the chat —{" "}
+              {session.character.name} will still take{" "}
+              {openObjectives.length === 1 ? "it" : "them"}, even if you already
+              moved on.
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain pb-3">
@@ -734,7 +769,9 @@ export function ChatPanel({ sessionId }: { sessionId: string }) {
                 <p className="min-w-0 text-xs text-red-600">{error}</p>
               ) : !objectivesComplete ? (
                 <p className="min-w-0 text-xs text-stone-500">
-                  Finish every point above before completing the session.
+                  {openObjectives.length === 1
+                    ? `Still need to ${openObjectives[0]?.label.toLowerCase() ?? "finish the last point"}.`
+                    : "Finish every open point above before completing the session."}
                 </p>
               ) : (
                 <p className="min-w-0 text-xs text-stone-500">

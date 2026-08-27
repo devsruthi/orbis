@@ -33,8 +33,9 @@ export function buildMessageCheckSystemPrompt(input: {
     ...voiceCasing,
     "Do not invent mistakes. Do not flag a correct sentence because another phrasing is more stylish.",
     "Do not over-correct minor style at this CEFR level.",
-    "If the message is acceptable, return ok true, the original text as corrected, and an empty issues list.",
-    "If there are issues, return ok false, a fully corrected version of the message, and one issue per problem.",
+    "Do not flag punctuation-only or spacing-only differences.",
+    "If the message is already correct, return ok true, keep the original text as corrected, and return an empty issues list. Do not ask the learner to send a correction.",
+    "If there are real issues, return ok false, a fully corrected version of the message, and one issue per problem.",
     "Write explanations in English, short and learner-friendly.",
     "Use the message_check tool.",
   ].join("\n");

@@ -6,6 +6,7 @@ import { logClaude } from "@/lib/server/claude/log";
 import type { ClaudeChatMessage } from "@/lib/server/claude/types";
 import { MessageCheckResultSchema } from "@/lib/shared/schemas";
 import type { MessageCheckResult } from "@/lib/shared/models";
+import { finalizeMessageCheck } from "@/lib/shared/message-check";
 import {
   buildMessageCheckSystemPrompt,
   buildMessageCheckUserMessage,
@@ -144,10 +145,11 @@ export function createMessageChecker(
           maxTokens: CHECK_MAX_TOKENS,
         });
         const output = parseMessageCheckResult(raw);
-        const result =
+        const withVoicePolicy =
           input.inputMode === "voice"
             ? applyVoiceCasingPolicy(output, input.languageCode)
             : output;
+        const result = finalizeMessageCheck(input.message, withVoicePolicy);
         logClaude("request_end", {
           latencyMs: Date.now() - started,
         });

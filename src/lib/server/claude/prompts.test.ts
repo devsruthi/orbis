@@ -88,6 +88,8 @@ describe("conversation context construction", () => {
     expect(prompt).toContain("Frau Keller");
     expect(prompt).toContain("greet_landlord");
     expect(prompt).toContain("Stay in character");
+    expect(prompt).toContain("Open objectives stay available");
+    expect(prompt).toContain("Do not mark an objective complete unless the learner actually attempted it");
     expect(prompt).toContain("translationEn");
     expect(prompt).toContain("You are at the apartment door.");
     expect(prompt).not.toContain("available_from_later_date");
@@ -125,6 +127,7 @@ describe("conversation context construction", () => {
     expect(opening).toContain("Speak first");
     expect(opening).toContain("Frau Keller");
     expect(opening).toContain("Apartment");
+    expect(opening).toContain("Leave room for the learner to greet you");
     expect(opening).not.toContain("Guten Morgen. Sie haben einen Termin?");
   });
 

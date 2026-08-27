@@ -15,7 +15,8 @@ describe("message check prompts", () => {
     expect(system).toContain("German (de)");
     expect(system).toContain("A1");
     expect(system).toContain("Tense or verb-form mistakes");
-    expect(system).toContain("mixed-language words");
+    expect(system).toContain("Do not over-correct minor style");
+    expect(system).toContain("If the message is already correct");
     expect(system).not.toContain("You are Ulla");
     expect(buildMessageCheckUserMessage("enshuldigung")).toContain(
       "enshuldigung",
