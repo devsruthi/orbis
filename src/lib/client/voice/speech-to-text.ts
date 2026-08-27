@@ -202,10 +202,8 @@ export function createWebSpeechToText(
           options.onFinal(text);
           return;
         }
-        settleError({
-          code: "no_speech",
-          message: "We didn't catch that. Try again, or continue with text.",
-        });
+        settled = true;
+        options.onFinal("");
       };
       active = recognition;
       try {

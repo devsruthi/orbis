@@ -98,6 +98,30 @@ button:disabled,
     );
 }
 
+.orbis-mic-wave {
+  pointer-events: none;
+  position: absolute;
+  inset: 0.35rem;
+  border-radius: 9999px;
+  border: 2px solid #22c55e;
+  animation: orbis-mic-wave 1.6s ease-out infinite;
+}
+
+.orbis-mic-wave-delay {
+  animation-delay: 0.55s;
+}
+
+@keyframes orbis-mic-wave {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.65);
+  }
+}
+
 .orbis-hero {
   background:
     radial-gradient(120% 80% at 10% 0%, rgba(255, 214, 170, 0.38), transparent 55%),

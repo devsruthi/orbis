@@ -74,13 +74,10 @@ export function reduceVoice(state: VoiceState, event: VoiceEvent): VoiceState {
       if (!transcript) {
         return {
           ...state,
-          status: "error",
+          status: "idle",
           transcript: "",
           interimTranscript: "",
-          error: {
-            code: "no_speech",
-            message: "We didn't catch that. Try again, or continue with text.",
-          },
+          error: null,
         };
       }
       return {

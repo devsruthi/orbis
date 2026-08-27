@@ -97,7 +97,13 @@ export function useVoiceConversation(options: {
       language: options.language,
       onInterim: (text) => dispatch({ type: "interim", text }),
       onFinal: (text) => dispatch({ type: "final", text }),
-      onError: (error) => dispatch({ type: "error", error }),
+      onError: (error) => {
+        if (error.code === "no_speech") {
+          dispatch({ type: "reset" });
+          return;
+        }
+        dispatch({ type: "error", error });
+      },
     });
   }, [dispatch, options.enabled, options.language, stt, tts]);
 

@@ -79,8 +79,8 @@ describe("voice state machine", () => {
 
   it("does not send an empty transcript", () => {
     const empty = reduceVoice(initialVoiceState(), { type: "final", text: "   " });
-    expect(empty.status).toBe("error");
-    expect(empty.error?.code).toBe("no_speech");
+    expect(empty.status).toBe("idle");
+    expect(empty.error).toBeNull();
     const reviewing = reduceVoice(
       { ...initialVoiceState(), status: "idle", transcript: "" },
       { type: "send_started" },
@@ -320,7 +320,7 @@ describe("speech-to-text provider abstraction", () => {
     expect(starts).toBe(2);
     expect(errorCode).toBe("");
     provider.stop();
-    expect(errorCode).toBe("no_speech");
+    expect(errorCode).toBe("");
   });
 
   it("ignores aborted recognition instead of surfacing an error", () => {

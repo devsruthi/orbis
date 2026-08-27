@@ -101,10 +101,8 @@ export function VoicePanel(props: {
               className={[
                 "inline-block h-2 w-2 rounded-full",
                 state.status === "listening"
-                  ? "bg-red-500"
-                  : state.status === "speaking"
-                    ? "bg-orbis-gold"
-                    : "bg-orbis-gold",
+                  ? "animate-pulse bg-emerald-500"
+                  : "bg-orbis-gold",
               ].join(" ")}
             />
             {statusLabel(state.status)}
@@ -282,14 +280,20 @@ function MicrophoneButton({
         }
         className={[
           "relative flex h-28 w-28 items-center justify-center rounded-full",
-          listening ? "bg-red-700 text-white" : "orbis-mic-ring text-white",
+          listening ? "orbis-mic-live text-white" : "orbis-mic-ring text-white",
           busy && !listening ? "opacity-60" : "",
         ].join(" ")}
       >
+        {listening ? (
+          <>
+            <span className="orbis-mic-wave" aria-hidden />
+            <span className="orbis-mic-wave orbis-mic-wave-delay" aria-hidden />
+          </>
+        ) : null}
         <span
           className={[
             "relative z-10 flex h-20 w-20 items-center justify-center rounded-full shadow-lg",
-            listening ? "bg-red-700" : "bg-orbis-gold",
+            listening ? "bg-emerald-500" : "bg-orbis-gold",
           ].join(" ")}
         >
           <MicIcon className="h-8 w-8 text-white" />
