@@ -74,6 +74,14 @@ export function ProgressIcon(props: IconProps) {
   );
 }
 
+export function CompletedIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M20 7 9.5 17.5 4 12" />
+    </Icon>
+  );
+}
+
 export function MicIcon(props: IconProps) {
   return (
     <Icon {...props}>

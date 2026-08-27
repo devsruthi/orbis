@@ -13,8 +13,8 @@ import {
 } from "@/lib/client/use-dashboard";
 import { pathHasStartedScene } from "@/lib/client/labels";
 import {
+  CompletedIcon,
   HomeIcon,
-  MicIcon,
   MissionsIcon,
   OrbitMark,
   ProgressIcon,
@@ -26,8 +26,9 @@ import { UserMenu } from "./user-menu";
 const LINKS = [
   { href: "/", label: "Dashboard", Icon: HomeIcon },
   { href: "/explore", label: "Missions", Icon: MissionsIcon },
-  { href: "/practice", label: "Reviews", Icon: ReviewsIcon },
   { href: "/progress", label: "Progress", Icon: ProgressIcon },
+  { href: "/completed", label: "Completed", Icon: CompletedIcon },
+  { href: "/practice", label: "Reviews", Icon: ReviewsIcon },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -110,22 +111,9 @@ function AppShellFrame({ children }: { children: ReactNode }) {
             </ul>
           </nav>
 
-          <div className="mt-6 flex flex-col gap-3 pb-4">
-            <Link
-              href={learner?.setupComplete ? "/explore" : "/"}
-              className="flex items-center gap-3 rounded-2xl bg-orbis-gold/12 px-3 py-3 text-sm text-orbis-gold-deep"
-            >
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-orbis-gold text-white">
-                <MicIcon className="h-4 w-4" />
-              </span>
-              <span>
-                <span className="block font-medium">Voice mode</span>
-                <span className="block text-xs text-stone-500">
-                  Speak in a mission.
-                </span>
-              </span>
-            </Link>
-          </div>
+          <p className="mt-6 px-1 pb-4 text-xs leading-relaxed text-stone-400">
+            Voice is available in missions. Speak or type.
+          </p>
         </div>
 
         <div className="shrink-0 px-4 py-4">
@@ -175,7 +163,7 @@ function AppShellFrame({ children }: { children: ReactNode }) {
             aria-label="Main"
             className="z-20 shrink-0 border-t border-stone-200/80 bg-[#f6f3ec]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-zinc-800 dark:bg-[#16130f]/95 lg:hidden"
           >
-            <ul className="mx-auto grid max-w-4xl grid-cols-4 px-1">
+            <ul className="mx-auto grid max-w-4xl grid-cols-5 px-1">
               {LINKS.map((link) => (
                 <li key={link.href}>
                   <NavLink

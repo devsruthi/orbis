@@ -71,7 +71,6 @@ export function ProgressView() {
                 <p className="text-sm text-stone-500">
                   <span aria-hidden>{languageFlag(session.language)} </span>
                   {session.language.toUpperCase()} {session.level}
-                  {` · ${formatRelativeTime(session.updatedAt ?? session.createdAt)}`}
                 </p>
                 <Link
                   href={playPath(session.id)}
