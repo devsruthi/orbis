@@ -69,20 +69,17 @@ function AppShellFrame({ children }: { children: ReactNode }) {
         <div className="shrink-0 px-4 pt-5">
           <UserMenu />
 
-          <Link
-            href="/"
-            className="mt-5 flex items-start gap-2 px-2 py-1 text-orbis-gold"
-          >
+          <div className="mt-5 flex items-start gap-2 px-2 py-1 text-orbis-gold">
             <OrbitMark className="mt-0.5 h-7 w-7 shrink-0" />
-            <span className="min-w-0">
-              <span className="block font-serif text-2xl tracking-wide text-foreground">
+            <div className="min-w-0">
+              <p className="font-serif text-2xl tracking-wide text-foreground">
                 ORBIS
-              </span>
-              <span className="mt-0.5 block text-sm leading-snug text-stone-500 dark:text-zinc-400">
+              </p>
+              <p className="mt-0.5 text-sm leading-snug text-stone-500 dark:text-zinc-400">
                 AI Language Immersion Simulator
-              </span>
-            </span>
-          </Link>
+              </p>
+            </div>
+          </div>
 
           {startedPaths.length > 0 ? (
             <div className="mt-5 px-2">

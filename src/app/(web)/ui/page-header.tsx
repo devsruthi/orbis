@@ -5,10 +5,10 @@ export const CARD =
   "orbis-card p-5";
 
 export const PRIMARY_BUTTON =
-  "inline-flex min-h-11 items-center justify-center rounded-full bg-orbis-gold px-4 py-2 text-sm font-medium text-white disabled:opacity-60";
+  "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full bg-orbis-gold px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60";
 
 export const SECONDARY_BUTTON =
-  "inline-flex min-h-11 items-center justify-center rounded-full border border-stone-300/90 px-4 py-2 text-sm disabled:opacity-60 dark:border-zinc-700";
+  "inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border border-stone-300/90 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700";
 
 export function PageHeader({
   kicker,

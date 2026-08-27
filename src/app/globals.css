@@ -51,6 +51,25 @@ body {
   overflow: hidden;
 }
 
+button,
+[type="button"],
+[type="submit"],
+[type="reset"],
+[role="button"],
+a,
+label,
+select,
+summary {
+  cursor: pointer;
+}
+
+button:disabled,
+[type="button"]:disabled,
+[type="submit"]:disabled,
+[type="reset"]:disabled {
+  cursor: not-allowed;
+}
+
 .font-serif {
   font-family: var(--font-serif), Georgia, "Times New Roman", serif;
 }
