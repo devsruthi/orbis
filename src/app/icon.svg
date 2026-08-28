@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Orbis">
+  <rect width="32" height="32" rx="8" fill="#f6f3ec"/>
+  <ellipse
+    cx="16"
+    cy="16"
+    rx="11"
+    ry="7.5"
+    fill="none"
+    stroke="#c4a265"
+    stroke-width="1.75"
+    transform="rotate(-28 16 16)"
+  />
+  <circle cx="16" cy="16" r="4.25" fill="#3d2a22"/>
+  <circle cx="25.5" cy="10.5" r="2.15" fill="#c4a265"/>
+</svg>

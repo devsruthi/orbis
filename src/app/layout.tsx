@@ -27,6 +27,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Orbis",
   description: "Enter the world. Speak the language.",
+  applicationName: "Orbis",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
