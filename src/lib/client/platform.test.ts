@@ -145,6 +145,12 @@ describe("network error handling", () => {
     expect(userFacingHttpError(500, "Error: at Object.foo (api.ts:12)")).toBe(
       "The server is temporarily unavailable. Please try again.",
     );
+    expect(
+      userFacingHttpError(
+        503,
+        "This deployment cannot save conversations. Add DATABASE_URL (Neon or Vercel Postgres) in Vercel, then redeploy.",
+      ),
+    ).toMatch(/DATABASE_URL/);
     expect(userFacingHttpError(404)).toMatch(/could not find/i);
     expect(
       userFacingHttpError(409, "This session is no longer accepting turns"),

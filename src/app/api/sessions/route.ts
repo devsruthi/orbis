@@ -5,6 +5,7 @@ import { toPublicSession } from "@/lib/server/public";
 import { CreateSessionBodySchema } from "@/lib/shared/schemas";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   try {

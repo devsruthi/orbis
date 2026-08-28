@@ -31,12 +31,34 @@ export function userFacingHttpError(status: number, serverMessage?: string): str
     return "The request timed out. Please try again.";
   }
   if (status >= 500) {
+    if (isSafeServerMessage(serverMessage)) {
+      return serverMessage;
+    }
     return "The server is temporarily unavailable. Please try again.";
   }
-  if (serverMessage && serverMessage.length > 0 && serverMessage.length < 180) {
+  if (isSafeServerMessage(serverMessage)) {
     return serverMessage;
   }
   return "Something went wrong. Please try again.";
+}
+
+function isSafeServerMessage(
+  message?: string,
+): message is string {
+  if (!message || message === "Internal server error") {
+    return false;
+  }
+  if (message.length >= 180) {
+    return false;
+  }
+  if (
+    message.includes("\n") ||
+    /error:\s*at\s/i.test(message) ||
+    /\s+at\s+\S+\s*\(/.test(message)
+  ) {
+    return false;
+  }
+  return true;
 }
 
 export function isLikelyOffline(): boolean {
