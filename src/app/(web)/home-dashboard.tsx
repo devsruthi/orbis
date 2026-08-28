@@ -30,8 +30,6 @@ export function HomeDashboard() {
   const dueCount = data.reviews.counts.dueToday;
   const learner = data.learner;
   const paths = data.paths;
-  const startedPaths = paths.filter(pathHasStartedScene);
-  const hasProgress = startedPaths.length > 0;
 
   const setupFlow = (
     <SetupFlow
@@ -86,32 +84,6 @@ export function HomeDashboard() {
     }
   }
 
-  if (!learner.setupComplete) {
-    return (
-      <div className="flex flex-col gap-8">
-        <header className="flex flex-col gap-3">
-          <p className="text-xs font-medium uppercase tracking-[0.22em] text-orbis-gold">
-            Orbis
-          </p>
-          <h1 className="font-serif text-4xl font-medium tracking-tight sm:text-5xl">
-            Enter the world. Speak the language.
-          </h1>
-          <p className="max-w-md text-base leading-relaxed text-stone-600 dark:text-zinc-400">
-            Choose a language, start at beginner, then step into a real
-            situation. You can add another language later and keep progress
-            separate.
-          </p>
-        </header>
-        <SetupFlow
-          wizard
-          onSaved={async () => {
-            await reload();
-          }}
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-8 sm:gap-10">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -153,8 +125,6 @@ export function HomeDashboard() {
         />
       ) : null}
 
-      {hasProgress ? null : setupFlow}
-
       <dl className="grid grid-cols-2 gap-2 text-sm sm:gap-3">
         <div className={CARD}>
           <dt className="text-stone-500">Sessions</dt>
@@ -173,7 +143,7 @@ export function HomeDashboard() {
         </div>
       </dl>
 
-      {hasProgress ? setupFlow : null}
+      {setupFlow}
 
       <section className="flex flex-col gap-3">
         <SectionLabel>Today</SectionLabel>

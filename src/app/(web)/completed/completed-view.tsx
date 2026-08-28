@@ -8,7 +8,6 @@ import { playPath } from "@/lib/client/routes";
 import { languageFlag } from "@/lib/client/labels";
 import { isCefrLevel } from "@/lib/shared/cefr";
 import { ErrorState, EmptyState, PageSkeleton, BusyOverlay } from "../ui/states";
-import { SetupFlow } from "../ui/setup-flow";
 import { PageHeader, PRIMARY_BUTTON } from "../ui/page-header";
 import {
   missionCoverFallback,
@@ -39,18 +38,6 @@ export function CompletedView() {
         message={error ?? "Could not load completed missions."}
         onRetry={() => void reload()}
       />
-    );
-  }
-
-  if (!data.learner.setupComplete) {
-    return (
-      <div className="flex flex-col gap-6">
-        <PageHeader
-          title="Choose a language first"
-          body="Complete a mission and it will show up here so you can try it again."
-        />
-        <SetupFlow wizard onSaved={() => reload()} />
-      </div>
     );
   }
 

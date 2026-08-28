@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useLearnerDashboard } from "@/lib/client/use-dashboard";
-import { startErrorMessage, openScenario, restartScenario } from "@/lib/client/start-session";
+import { startErrorMessage, restartScenario } from "@/lib/client/start-session";
 import { playPath } from "@/lib/client/routes";
 import {
   attemptStatusLabel,
@@ -12,8 +12,7 @@ import {
   languageFlag,
 } from "@/lib/client/labels";
 import { ErrorState, PageSkeleton, BusyOverlay } from "../ui/states";
-import { SetupFlow } from "../ui/setup-flow";
-import { PageHeader, PRIMARY_BUTTON, SECONDARY_BUTTON } from "../ui/page-header";
+import { PageHeader, PRIMARY_BUTTON } from "../ui/page-header";
 import {
   missionCoverFallback,
   missionCoverSrc,
@@ -45,18 +44,6 @@ export function ExploreView() {
     );
   }
 
-  if (!data.learner.setupComplete) {
-    return (
-      <div className="flex flex-col gap-6">
-        <PageHeader
-          title="Choose a language first"
-          body="Orbis starts with a language, then a beginner CEFR level, then a mission. You can add another language later."
-        />
-        <SetupFlow wizard onSaved={() => reload()} />
-      </div>
-    );
-  }
-
   const activeLanguage =
     selectedLanguage && data.paths.some((path) => path.language === selectedLanguage)
       ? selectedLanguage
@@ -72,12 +59,11 @@ export function ExploreView() {
     setPendingKind("open");
     setStartError(null);
     try {
-      const sessionId = await openScenario({
+      const sessionId = await restartScenario({
         worldId: path.worldId,
         scenarioId: scenario.id,
         language: path.language,
         level: path.level,
-        activeSessionId: scenario.activeSessionId,
       });
       router.push(playPath(sessionId));
     } catch (caught) {
@@ -333,34 +319,7 @@ function CategorySection({
             </p>
             {scenario.status === "enabled" ? (
               <div className="mt-4 flex flex-col gap-2">
-                {scenario.activeSessionId ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => onStart(scenario)}
-                      disabled={pendingId !== null}
-                      className={`${PRIMARY_BUTTON} w-full`}
-                    >
-                      {pendingId === `${scenario.worldId}:${scenario.id}` &&
-                      pendingKind === "open"
-                        ? "Opening…"
-                        : "Continue"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onRestart(scenario)}
-                      disabled={pendingId !== null}
-                      className={`${SECONDARY_BUTTON} w-full`}
-                    >
-                      {pendingId === `${scenario.worldId}:${scenario.id}` &&
-                      pendingKind === "restart"
-                        ? "Starting…"
-                        : scenario.completedCount > 0
-                          ? "Try again"
-                          : "Start over"}
-                    </button>
-                  </>
-                ) : scenario.completedCount > 0 ? (
+                {scenario.completedCount > 0 ? (
                   <button
                     type="button"
                     onClick={() => onRestart(scenario)}
