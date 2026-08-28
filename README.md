@@ -2,13 +2,13 @@
 
 **Enter the world. Speak the language.**
 
-Orbis is an AI language-immersion app. You step into everyday situations — a bakery, a landlord call, a city office — and talk to characters in German or French. Speak or type. The character replies in the language, at your CEFR level.
+Orbis is an AI language-immersion app. You step into everyday situations — a bakery, a landlord call, a city office — and talk to characters in your target language. Speak or type. The character replies in that language, at your CEFR level.
 
 The point is not drills. The point is to **learn by living**.
 
 ## What you can do
 
-- Choose **German** or **French**, then a level from **A1 to C1**
+- Choose a language, then a level from **A1 to C1**
 - Play missions in housing, city life, work, and everyday scenes
 - Speak or type in the same conversation
 - Get a pre-send check for spelling and grammar (typed messages)
