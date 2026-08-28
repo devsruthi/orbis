@@ -23,7 +23,7 @@ export function HomeDashboard() {
     return <PageSkeleton label="Opening your world…" />;
   }
   if (error || !data) {
-    return <ErrorState message={error ?? "Could not load your journey."} onRetry={() => void reload()} />;
+    return <ErrorState message={error ?? "Could not load your journey!"} onRetry={() => void reload()} />;
   }
 
   const recommendation = data.recommendations[0];
