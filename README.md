@@ -1,108 +1,65 @@
 # Orbis
 
-Enter the world. Speak the language.
+**Enter the world. Speak the language.**
 
-Orbis is an AI-powered language immersion platform. Learners enter simulated
-real-life situations and talk to AI characters in their target language.
+Orbis is an AI language-immersion app. You step into everyday situations — a bakery, a landlord call, a city office — and talk to characters in German or French. Speak or type. The character replies in the language, at your CEFR level.
 
-The goal is not vocabulary drills. The goal is: **learn by living.**
+The point is not drills. The point is to **learn by living**.
 
-## Current stage
+## What you can do
 
-**Stage 9** — Voice conversations.
+- Choose **German** or **French**, then a level from **A1 to C1**
+- Play missions in housing, city life, work, and everyday scenes
+- Speak or type in the same conversation
+- Get a pre-send check for spelling and grammar (typed messages)
+- Complete a session when the required objectives are actually done
+- See scores, streaks, weak areas, and spaced reviews
+- Sign in with Google (optional). Progress is still tied to a learner id
 
-The same React/Next.js client runs in a browser and in a Tauri Android app.
-Voice is an interface on top of the existing conversation engine. Claude,
-Inngest, persistence, and secrets stay on the Next.js server.
+Pages: **Dashboard**, **Missions**, **Progress**, **Completed**, **Reviews**.
 
-## Deployment model
+## Stack
+
+| Piece | What Orbis uses |
+| --- | --- |
+| App | Next.js 16 (App Router), React 19, TypeScript |
+| UI | Tailwind CSS 4 |
+| Validation | Zod |
+| Conversation & evaluation | Anthropic Claude (official SDK, server-only) |
+| Background jobs | Inngest (session evaluation). If publish fails, evaluation can run inline |
+| Auth | Auth.js (NextAuth v5) with Google |
+| Data | JSON files locally; **Postgres on Vercel** (`postgres` + Neon / Vercel Postgres) |
+| Tests | Vitest |
+| Native (optional) | Tauri 2 Android / desktop WebView — same UI, remote `/api` |
+
+Claude keys, Inngest keys, Google secrets, and the database URL stay on the server. Never use `NEXT_PUBLIC_` for those.
 
 ```
-WEB
-Browser → Next.js frontend → same-origin /api → Next.js backend → Claude + Inngest
-
-ANDROID
-Tauri WebView → bundled Orbis client → NEXT_PUBLIC_API_BASE_URL → Next.js backend → Claude + Inngest
+Browser  →  Next.js UI  →  /api  →  Next.js server  →  Claude, Postgres, Inngest
 ```
 
-Production:
+Android/Tauri uses the same client, pointed at a deployed backend via `NEXT_PUBLIC_API_BASE_URL`. Do not put the Next.js server, Claude SDK, or Inngest inside the APK.
 
-1. Deploy Next.js as the web app **and** API backend.
-2. Build the Tauri Android client against that backend URL.
-3. The APK talks to the deployed backend over HTTPS.
-
-Do not package the Next.js server, Claude SDK, or Inngest into the APK.
-
-## Environment variables
-
-### Web server (never ship these to the client)
-
-| Variable | Purpose |
-| --- | --- |
-| `ANTHROPIC_API_KEY` | Claude API key. Server-side only. |
-| `ANTHROPIC_MODEL` | Claude model id. Server-side only. |
-| `INNGEST_EVENT_KEY` | Inngest event key. Server-side only. |
-| `INNGEST_SIGNING_KEY` | Inngest signing key. Server-side only. |
-| `INNGEST_DEV` | Set to `1` for the local Inngest Dev Server. |
-| `ORBIS_DATA_DIR` | JSON persistence root (defaults to `./data`). |
-| `ORBIS_CORS_ORIGINS` | Extra allowed browser/Tauri origins for `/api`. |
-
-Do **not** create `NEXT_PUBLIC_ANTHROPIC_API_KEY` or any public Inngest key.
-
-### Client / Tauri
-
-| Variable | Purpose |
-| --- | --- |
-| `NEXT_PUBLIC_API_BASE_URL` | Backend origin for the client. Empty on web means same-origin `/api`. |
-
-Web: leave `NEXT_PUBLIC_API_BASE_URL` empty.
-
-Tauri production: set it to the deployed HTTPS origin, for example
-`https://orbis.example`. Do not hardcode that URL in application code.
-
-Android emulator development: `localhost` inside the emulator is **not** the
-developer machine. Use `http://10.0.2.2:3000` (Android emulator loopback to
-the host) or `adb reverse tcp:3000 tcp:3000` and then `http://127.0.0.1:3000`.
-Do not hardcode a LAN IP in source.
-
-Physical-device development: point `NEXT_PUBLIC_API_BASE_URL` at a reachable
-host for that session only (or use `adb reverse`). Tauri sets `TAURI_DEV_HOST`
-when you run `tauri android dev` on a device.
-
-## CORS
-
-The backend allows a small origin list (not `Access-Control-Allow-Origin: *`):
-
-- `tauri://localhost`
-- `https://tauri.localhost`
-- `http://tauri.localhost`
-- `http://localhost:3000`
-- `http://127.0.0.1:3000`
-- `http://10.0.2.2:3000`
-- plus any origins in `ORBIS_CORS_ORIGINS`
-
-Same-origin web requests send no `Origin` and do not need CORS.
-
-## Web development
+## Run locally
 
 ```bash
 npm install
+cp .env.example .env.local
 ```
 
-Copy `.env.example` to `.env.local` and set `ANTHROPIC_API_KEY`. For local
-Inngest, keep `INNGEST_DEV=1`.
+Set `ANTHROPIC_API_KEY` in `.env.local`. Leave `DATABASE_URL` empty to store data as JSON under `./data`.
 
 ```bash
 npm run dev
 ```
 
-In a second terminal:
+Open [http://localhost:3000](http://localhost:3000).
+
+In a second terminal (needed for queued evaluation; complete-session still works if this is down):
 
 ```bash
 npx inngest-cli@latest dev -u http://localhost:3000/api/inngest
 ```
-
-The app runs at [http://localhost:3000](http://localhost:3000).
 
 ```bash
 npm test
@@ -111,218 +68,171 @@ npm run lint
 npm run build
 ```
 
-`npm run build` produces the **full** Next.js server app, including `/api`.
-It does not static-export the site.
+`npm run build` builds the **full** Next.js server, including `/api`. It is not a static export.
 
-## Tauri development
+## Deploy on Vercel
 
-Requirements: Rust (stable), the Tauri 2 CLI (`npm run tauri`), JDK 17 or 21
-(JDK 26 is too new for Tauri's current Gradle), Android SDK, NDK, and
-platform-tools. See [Tauri 2 prerequisites](https://v2.tauri.app/start/prerequisites/).
+Local JSON files **do not work** on Vercel (read-only disk). Mission clicks fail with a 500 until Postgres is set.
 
-Example environment for Homebrew on macOS (paths vary by machine):
+1. Deploy the Next.js app.
+2. Add a **Neon** or **Vercel Postgres** database.
+3. Set environment variables (Production):
 
-```bash
-export JAVA_HOME="/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
-export ANDROID_HOME="/opt/homebrew/share/android-commandlinetools"
-export NDK_HOME="$ANDROID_HOME/ndk/$(ls -1 "$ANDROID_HOME/ndk" | tail -1)"
-export PATH="$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$PATH"
+| Variable | Required |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | Yes |
+| `DATABASE_URL` or `POSTGRES_URL` | Yes on Vercel |
+| `AUTH_SECRET` | Yes if Google sign-in is used |
+| `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | Yes if Google sign-in is used |
+| `INNGEST_EVENT_KEY` / `INNGEST_SIGNING_KEY` | For Inngest Cloud |
+
+The app reads a database URL in this order: `POSTGRES_URL`, then `DATABASE_URL`, then `POSTGRES_PRISMA_URL`. Vercel Postgres usually sets `POSTGRES_URL`.
+
+Add the production site to the Google OAuth callback list, for example:
+
+`https://your-app.vercel.app/api/auth/callback/google`
+
+Hobby plans cap serverless functions at about 10 seconds. Opening a scene calls Claude; a Pro plan (or longer `maxDuration`) is more reliable.
+
+## Environment variables
+
+Copy from `.env.example`. Server secrets must never go to the browser, Tauri, or Android.
+
+### Server
+
+| Variable | Purpose |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | Claude. Required to start a mission. |
+| `ANTHROPIC_MODEL` | Optional model id. |
+| `DATABASE_URL` | Postgres. Required on Vercel. |
+| `POSTGRES_URL` | Same as above; used first if set. |
+| `ORBIS_DATA_DIR` | Local JSON root (default `./data`). Ignored when a database URL is set. |
+| `INNGEST_EVENT_KEY` | Inngest events. |
+| `INNGEST_SIGNING_KEY` | Inngest signing. |
+| `INNGEST_DEV` | `1` for the local Inngest Dev Server. |
+| `AUTH_SECRET` | Auth.js secret. |
+| `AUTH_GOOGLE_ID` | Google OAuth client id. |
+| `AUTH_GOOGLE_SECRET` | Google OAuth client secret. |
+| `ORBIS_CORS_ORIGINS` | Extra allowed origins for `/api` (Tauri / custom hosts). |
+
+Do not create `NEXT_PUBLIC_ANTHROPIC_API_KEY` or public Inngest keys.
+
+### Client / Tauri
+
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | Backend origin. Empty on web means same-origin `/api`. |
+
+Web: leave it empty.
+
+Tauri production: set it to the HTTPS origin, for example `https://orbis.example`. Do not hardcode that URL in source.
+
+Android emulator: `localhost` inside the emulator is not your laptop. Use `http://10.0.2.2:3000` or `adb reverse tcp:3000 tcp:3000` then `http://127.0.0.1:3000`.
+
+## Persistence
+
+- **Local:** JSON under `data/learners/`, `data/sessions/`, `data/evaluations/`, and `data/reviews/`.
+- **Vercel / production:** Postgres table `orbis_records` (created on first use).
+
+Learner ids live in `localStorage` (`orbis.learnerId`). Refreshing the tab does not wipe a chat. **Start over** / **Try again** deletes the active session for that scene and starts a new one. Completing a session keeps the record for scores and reviews.
+
+## Identity
+
+You can use Orbis without signing in. A learner id is created in the browser.
+
+**Sign in with Google** (Auth.js) links that id to the Google account via `POST /api/auth/sync`. It is not a full multi-device account system yet. Do not treat the local id as a password or as proof of identity on the server beyond matching the stored learner.
+
+## Voice
+
+```
+Speak → speech-to-text → POST /api/sessions/:id/turns → Claude → reply text → text-to-speech
 ```
 
-Desktop WebView (optional, uses `next dev`):
+Voice is only an input method. Missions, CEFR, evaluation, and Claude prompts stay the same. Optional `inputMode` (`text` | `voice`) is metadata. There is no separate voice API.
+
+| | Web | Android APK |
+| --- | --- | --- |
+| Speech-to-text | Web Speech API (Chrome, Edge) | Android `SpeechRecognizer` |
+| Speech-to-text fallback | Type instead | Type instead |
+| Text-to-speech | `speechSynthesis` | `speechSynthesis` |
+
+Orbis does **not** store raw audio — only the recognized text. Chrome and Android speech services typically send audio to the **device speech provider** (often Google). Orbis does not add its own speech vendor or speech API keys. Do not claim audio never leaves the device.
+
+No pronunciation scoring.
+
+Microphone permission is requested when you tap to speak, not at launch.
+
+## How a mission works
+
+1. Pick a language and level on the dashboard.
+2. Open **Missions** and enter a scene.
+3. Talk until the required objectives are done. Skipped points stay open until you actually say them.
+4. **Complete session** runs evaluation (Inngest, or inline if the queue is unavailable).
+5. Mistakes become review items. Scores and streak update on the dashboard.
+
+The client cannot send simulation state or a homemade transcript to evaluate. The server loads the stored conversation.
+
+## API (short)
+
+| Method | Path | Role |
+| --- | --- | --- |
+| `POST` | `/api/sessions` | Start or restart a scene (Claude opening line) |
+| `GET` | `/api/sessions/:id` | Load the public session |
+| `POST` | `/api/sessions/:id/check-message` | Pre-send language check |
+| `POST` | `/api/sessions/:id/turns` | Send a turn `{ message, inputMode? }` |
+| `POST` | `/api/sessions/:id/complete` | Finish and evaluate |
+| `GET` | `/api/sessions/:id/status` | `processing` / `evaluated` / … |
+| `GET` | `/api/sessions/:id/evaluation` | Result when ready |
+| `GET` | `/api/learners/:id/dashboard` | Home, missions, progress |
+| `PATCH` | `/api/learners/:id` | Save language and level |
+| `GET` | `/api/learners/:id/practice` | Due reviews |
+| `GET` | `/api/reviews/:id?learnerId=` | One review exercise |
+| `POST` | `/api/reviews/:id/answer` | Submit an answer |
+| `GET` | `/api/worlds`, `/api/worlds/:id` | World catalog |
+| `GET` | `/api/scenarios/:id` | Scenario catalog |
+| `*` | `/api/auth/*` | Auth.js |
+| `POST` | `/api/auth/sync` | Link Google user to learner id |
+| `GET\|POST\|PUT` | `/api/inngest` | Inngest serve |
+
+Review routes require a matching `learnerId` and do not expose another learner’s items. Network errors in the UI are short and human-readable (offline, timeout, not found, server unavailable) — not stack traces.
+
+## CORS
+
+Same-origin web requests do not need CORS. The API allows a small origin list (not `*`):
+
+- `tauri://localhost`, `https://tauri.localhost`, `http://tauri.localhost`
+- `http://localhost:3000`, `http://127.0.0.1:3000`, `http://10.0.2.2:3000`
+- plus `ORBIS_CORS_ORIGINS`
+
+## Tauri / Android (optional)
+
+Same React client. Secrets stay on the Next.js server.
+
+Needs: Rust (stable), Tauri 2 CLI (`npm run tauri`), JDK 17 or 21 (not 26), Android SDK, NDK, platform-tools. See [Tauri 2 prerequisites](https://v2.tauri.app/start/prerequisites/).
+
+Desktop window (uses `next dev`):
 
 ```bash
 npm run tauri dev
 ```
 
-This starts Next.js on `http://localhost:3000` and loads it in a Tauri window.
-API calls stay same-origin against that Next.js server.
-
-The Tauri production frontend is a static export (`out/`). The build script
-temporarily moves server-only routes (`src/app/api`, `src/proxy.ts`, and dynamic
-play/review redirects) out of the tree so Next.js can export the client. Those
-files are restored afterwards. Claude, Inngest, and persistence stay on the
-server.
-
-```bash
-TAURI_DEBUG=1 NEXT_PUBLIC_API_BASE_URL=http://10.0.2.2:3000 npm run build:tauri
-```
-
-Production APK frontend:
+The production Tauri frontend is a static export (`out/`). `npm run build:tauri` temporarily moves server-only routes out of the tree so Next can export the client, then restores them.
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=https://your-orbis-backend.example npm run tauri android build
 ```
 
-Production Tauri builds fail if `NEXT_PUBLIC_API_BASE_URL` is missing or is
-localhost / `10.0.2.2`. Debug builds may use those development URLs.
+Production builds fail if `NEXT_PUBLIC_API_BASE_URL` is missing or is localhost / `10.0.2.2`. Debug builds may use those URLs.
 
-## Android development
+App id: `com.orbis.language`. Display name: **Orbis**.
 
-Initialize the Android project once (already done in this repo after Stage 8):
-
-```bash
-npm run android:init
-```
-
-Emulator + local Next.js:
-
-1. Start the web backend: `npm run dev` (and Inngest if you need evaluation).
-2. Set `NEXT_PUBLIC_API_BASE_URL=http://10.0.2.2:3000` in `.env.local` for
-   packaged debug APKs, **or** run live reload:
-   `npm run android:dev`
-3. `tauri android dev` uses `http://10.0.2.2:3000` as the Android `devUrl`.
-   `localhost` inside the emulator is the emulator itself.
-
-Debug APK:
+Permissions: internet, microphone, modify-audio-settings. No camera, location, contacts, or notifications.
 
 ```bash
+# emulator + local Next
+npm run dev
+NEXT_PUBLIC_API_BASE_URL=http://10.0.2.2:3000 npm run android:dev
+
+# debug APK
 TAURI_DEBUG=1 NEXT_PUBLIC_API_BASE_URL=http://10.0.2.2:3000 npm run android:build
 ```
-
-Install the generated APK on an emulator or device. The app id is
-`com.orbis.language`. The display name is **Orbis**.
-
-Release APK configuration exists via `tauri android build` without `--debug`.
-Do not commit signing keys. Google Play publishing is out of scope.
-
-Android permissions are internet, microphone recording, and modify-audio-settings
-(required for WebView capture). Microphone access is requested only when the
-learner taps **Tap to speak**, not at app launch. Camera, location, contacts,
-and notifications are not requested.
-
-## Voice mode
-
-```
-User speaks
- ↓
-Speech-to-text
-  web: Web Speech API
-  Android/Tauri: platform SpeechRecognizer (WebView has no Web Speech STT)
- ↓
-Existing POST /api/sessions/:id/turns
- ↓
-Claude + simulation engine
- ↓
-Text response
- ↓
-Text-to-speech (Web Speech API / speechSynthesis)
- ↓
-Character speaks
-```
-
-Voice does **not** change CEFR, missions, evaluation, or Claude prompts.
-Spoken turns become the same `message` as typed turns. Optional `inputMode`
-(`text` | `voice`) is metadata only. There is no `POST /api/voice/conversation`.
-
-Stage 9 does **not** score pronunciation or accent.
-
-### Supported platforms
-
-- **Speech-to-text (web):** Chromium browsers (Chrome, Edge) via
-  `SpeechRecognition` / `webkitSpeechRecognition`.
-- **Speech-to-text (Android APK):** Android `SpeechRecognizer` through a
-  WebView bridge. Android System WebView typically does not implement the
-  Web Speech Recognition API.
-- **Text-to-speech:** Most browsers and Android WebViews via
-  `speechSynthesis`.
-- **Firefox / Safari / some WebViews:** STT may be missing. The conversation
-  stays usable with text. If TTS is missing, replies still appear as text.
-
-### Microphone permission
-
-The app explains why the microphone is needed and asks only when you tap to
-speak. Android declares `RECORD_AUDIO` and `MODIFY_AUDIO_SETTINGS` but does
-not prompt at startup. Tauri capabilities remain `core:default` only; no extra
-native plugins are exposed.
-
-### Privacy
-
-Orbis does not store raw audio. Only the recognized text is saved as a
-normal conversation turn. Chrome STT and Android `SpeechRecognizer` send
-speech to the **device speech recognition service** (often Google) to convert
-it to text. Orbis does not add a separate paid speech API or speech API keys.
-Do not claim audio never leaves the device.
-
-Replay uses the existing reply text; it does not call Claude again.
-
-### Cost
-
-No Orbis speech-provider keys or usage fees. Platform speech services may
-apply their own terms.
-
-### Fallback
-
-If voice is unavailable: “Voice mode isn't available on this device.”
-Continue with text. If TTS fails, the written reply remains.
-
-## Identity and authentication
-
-Learner identity still uses `getOrCreateLearnerId()` in local storage. That
-works in the Tauri WebView. There is no multi-device sync yet. Production
-sync across devices will need authentication later. Do not treat local
-learner ids as an account system.
-
-## Network failures
-
-The client shows friendly errors for offline, timeout, 404, and 500
-responses. It does not show stack traces or raw `fetch` failures.
-
-## Technology
-
-- Next.js
-- TypeScript
-- Tailwind CSS
-- Zod
-- Anthropic Claude API (official SDK, server-side)
-- Inngest (server-side)
-- Tauri 2 (Android client)
-
-## Current functionality
-
-- Germany world with reusable locations
-- German A1–C1 (same missions; CEFR controls how the character speaks)
-- Apartment viewing, Anmeldung / Bürgeramt, and Restaurant missions
-- Scenario variants so repeats are not identical
-- Condition-based events and lightweight branching
-- Server-owned simulation state and mission outcomes
-- Server-side Claude conversation API
-- Async Claude evaluation via Inngest after a session is completed
-- Review items created from detected mistakes
-- Deterministic priority and spaced review dates
-- Targeted fill-in-the-blank / short-answer reviews
-- Next-practice scenario recommendations from learner weaknesses
-- Learner home, explore, practice, and progress views
-- First-run setup: choose a language, then a CEFR level. New learners start
-  at German A1. A1–C1 are playable; other languages show as coming soon
-- Derived dashboard: scores, streaks, weaknesses, and review counts
-- Tauri 2 Android client using the same frontend
-- Voice mode: speech-to-text, existing conversation API, text-to-speech
-  (no pronunciation scoring)
-
-## API
-
-- `GET /api/worlds`
-- `GET /api/worlds/germany`
-- `GET /api/scenarios/apartment_viewing`
-- `POST /api/sessions` — creates a session with a mission snapshot, variant, and simulation state, then generates the opening character line with Claude
-- `GET /api/sessions/:id` — includes public mission/simulation context (not internal event ids)
-- `POST /api/sessions/:id/turns` — body `{ "message": "...", "inputMode": "text" | "voice" }`; `inputMode` is optional metadata. Claude still receives only `message`. The client cannot send simulation state
-- `POST /api/sessions/:id/complete` — marks the session processing and publishes `orbis/session.completed`
-- `GET /api/sessions/:id/status` — `{ "status": "processing" | "evaluated" | ... }`
-- `GET /api/sessions/:id/evaluation` — 404 until the workflow finishes
-- `GET /api/learners/:id/dashboard` — home/progress/explore aggregation
-- `PATCH /api/learners/:id` — body `{ "language": "de", "level": "A2" }`
-- `GET /api/learners/:id/practice` — due reviews and a recommended scenario
-- `GET /api/learners/:id/next-practice` — `{ scenarioId, reason, priorityConcepts }`
-- `GET /api/reviews/:id?learnerId=` — pending review exercise when ready
-- `POST /api/reviews/:id/answer` — body `{ "answer": "...", "learnerId": "..." }`
-- `GET|POST|PUT /api/inngest` — Inngest serve endpoint
-
-Session, evaluation, and review data are stored as JSON under `data/learners/`,
-`data/sessions/`, `data/evaluations/`, and `data/reviews/`. Claude and Inngest
-credentials stay on the server. The client cannot submit a transcript to
-evaluate; the workflow loads the stored conversation. Review APIs require a
-matching `learnerId` and do not expose another learner's items.
-Dashboard values are derived from those records. Simulation values are derived
-from the session snapshot, not from client input.
